@@ -21,16 +21,16 @@
 
 
 module quick_spi #(parameter CLK_DIV = 2)(
-    input clk,
-    input rst,
-    input miso,
-    output mosi,
-    output sck,
-    input start,
-    input[7:0] data_in,
-    output[7:0] data_out,
-    output busy,
-    output new_data
+    input wire clk,
+    input wire rst,
+    input wire miso,
+    output wire mosi,
+    output wire sck,
+    input wire start,
+    input wire[7:0] data_in,
+    output wire[7:0] data_out,
+    output wire busy,
+    output wire new_data
   );
    
   localparam IDLE = 2'd0, WAIT_HALF = 2'd1, TRANSFER = 2'd2;
