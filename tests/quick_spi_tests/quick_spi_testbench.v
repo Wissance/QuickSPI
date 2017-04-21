@@ -37,10 +37,10 @@ module quick_spi_testbench();
     
     initial begin
         clk <= 1'b0;
-        rst <= 1'b1;
+        rst <= 1'b0;
         start <= 1'b0;
         data_in <= #50 8'b01101100;
-        rst <= #50 1'b0;
+        rst <= #50 1'b1;
         start <= #50 1'b1;
     end
     

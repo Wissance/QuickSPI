@@ -105,7 +105,7 @@ module quick_spi #(parameter CLK_DIV = 2)(
   end
    
   always @(posedge clk) begin
-    if (rst) begin
+    if (!rst) begin
       ctr_q <= 3'b0;
       data_q <= 8'b0;
       sck_q <= 4'b0;
