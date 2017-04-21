@@ -83,13 +83,11 @@ module quick_spi #(parameter CLK_DIV = 2)(
       TRANSFER: begin
         sck_d = sck_q + 1'b1;
         
-        if (sck_q == 4'b0000) begin
-          mosi_d = data_q[7];
-        end
+        if (sck_q == 4'b0000)
+            mosi_d = data_q[7];
         
-        else if (sck_q == {CLK_DIV-1{1'b1}}) begin
+        else if (sck_q == {CLK_DIV-1{1'b1}})
           data_d = {data_q[6:0], miso};
-        end
         
         else if (sck_q == {CLK_DIV{1'b1}}) begin
           ctr_d = ctr_q + 1'b1;
