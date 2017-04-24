@@ -1,27 +1,6 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 23.04.2017 09:36:17
-// Design Name: 
-// Module Name: quick_spi_tb
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
 
 module quick_spi_tb;
-
 reg clk;
 reg rst_n;
 wire busy;
@@ -32,6 +11,7 @@ wire mosi;
 reg miso;
 wire sclk;
 wire[1:0] ss_n;
+reg enable;
 
 initial begin
     miso <= 1'b1;
@@ -39,13 +19,18 @@ initial begin
 
     clk <= 1'b0;
     rst_n <= 1'b0;
-    rst_n <= #50 1'b1; 
+    enable <= 1'b1;
+    
+    rst_n <= #50 1'b1;
+    enable <= #100 1'b0; 
 end
 
 quick_spi spi(
     .clk(clk),
     .reset_n(rst_n),
-    .enable(1'b1),
+    .enable(enable),
+    .slave(2'b01),
+    .operation(1'b1),
     .busy(busy),
     .incoming_data(incoming_data),
     .outgoing_data(outgoing_data),
