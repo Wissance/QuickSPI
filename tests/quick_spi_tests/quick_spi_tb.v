@@ -12,6 +12,7 @@ reg miso;
 wire sclk;
 wire[1:0] ss_n;
 reg enable;
+reg operation;
 
 initial begin
     miso <= 1'b1;
@@ -23,6 +24,10 @@ initial begin
     
     rst_n <= #50 1'b1;
     enable <= #100 1'b0; 
+    operation <= 1;
+    enable <= #4000 1'b1;
+    operation <= #4000 1'b0;
+    enable <= #4050 1'b0;
 end
 
 quick_spi spi(
@@ -30,7 +35,7 @@ quick_spi spi(
     .reset_n(rst_n),
     .enable(enable),
     .slave(2'b01),
-    .operation(1'b1),
+    .operation(operation),
     .busy(busy),
     .incoming_data(incoming_data),
     .outgoing_data(outgoing_data),
