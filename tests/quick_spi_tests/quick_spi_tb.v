@@ -18,27 +18,16 @@ reg operation;
 initial begin
     miso <= 1'b1;
     outgoing_data <= 16'b0101101001011010;
-
     clk <= 1'b0;
     rst_n <= 1'b0;
-    
     enable <= 1'b1;
     start_transaction <= 1'b1;
     operation <= 1;
-    
     rst_n <= #50 1'b1;
-    /*start_transaction <= #100 1'b0; 
-    operation <= 1;
-    enable <= #4000 1'b1;
-    operation <= #4000 1'b0;
-    enable <= #4050 1'b0;*/
 end
 
 always @ (posedge clk) begin
     if(end_of_transaction) begin
-        //enable <= 1'b0;
-        //start_transaction <= 1'b0;
-        
         operation <= ~operation;
     end
 end
