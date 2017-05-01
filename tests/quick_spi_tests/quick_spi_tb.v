@@ -6,7 +6,6 @@ reg rst_n;
 wire end_of_transaction;
 wire[7:0] incoming_data;
 reg[15:0] outgoing_data;
-
 wire mosi;
 reg miso;
 wire sclk;
@@ -16,19 +15,24 @@ reg start_transaction;
 reg operation;
 
 initial begin
-    miso <= 1'b1;
-    outgoing_data <= 16'b0101101001011010;
     clk <= 1'b0;
     rst_n <= 1'b0;
-    enable <= 1'b1;
-    start_transaction <= 1'b1;
-    operation <= 1;
     rst_n <= #50 1'b1;
 end
 
 always @ (posedge clk) begin
-    if(end_of_transaction) begin
-        operation <= ~operation;
+    if(!rst_n) begin
+        miso <= 1'b1;
+        outgoing_data <= 16'b0101101001011010;
+        enable <= 1'b1;
+        start_transaction <= 1'b1;
+        operation <= 1'b1;
+    end
+    
+    else begin
+        if(end_of_transaction) begin
+            operation <= ~operation;
+        end
     end
 end
 

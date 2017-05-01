@@ -49,7 +49,7 @@ always @ (posedge clk) begin
         sclk <= CPOL;
         ss_n <= {NUMBER_OF_SLAVES{1'b1}};
         sclk_toggle_count <= 0;
-        transaction_toggles <= operation == READ ? ALL_READ_TOGGLES : EXTRA_WRITE_SCLK_TOGGLES;
+        transaction_toggles <= 0;
         spi_clock_phase <= ~CPHA;
         incoming_data <= {INCOMING_DATA_WIDTH{1'b0}};
         incoming_data_buffer <= {INCOMING_DATA_WIDTH{1'b0}};
@@ -62,6 +62,7 @@ always @ (posedge clk) begin
             IDLE: begin                
                 if(enable) begin
                     if(start_transaction) begin
+                        transaction_toggles <= (operation == READ) ? ALL_READ_TOGGLES : EXTRA_WRITE_SCLK_TOGGLES;
                         outgoing_data_buffer <= outgoing_data;
                         state <= ACTIVE;
                     end
