@@ -26,7 +26,7 @@ module quick_spi #(
 localparam READ = 1'b0;
 localparam WRITE = 1'b1;
 
-localparam READ_SCLK_TOGGLES = INCOMING_DATA_WIDTH * 2;
+localparam READ_SCLK_TOGGLES = (INCOMING_DATA_WIDTH * 2) + 2;
 localparam ALL_READ_TOGGLES = EXTRA_READ_SCLK_TOGGLES + READ_SCLK_TOGGLES;
 
 integer sclk_toggle_count;
@@ -85,6 +85,8 @@ always @ (posedge clk) begin
                         if(sclk_toggle_count > ((OUTGOING_DATA_WIDTH*2)+EXTRA_READ_SCLK_TOGGLES)-1) begin
                             incoming_data_buffer <= incoming_data_buffer << 1;
                             incoming_data_buffer[0] <=  miso;
+                            /*incoming_data <= incoming_data << 1;
+                            incoming_data[0] <= miso;*/
                         end
                     end
                 end
