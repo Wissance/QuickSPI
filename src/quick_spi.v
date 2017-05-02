@@ -83,11 +83,8 @@ always @ (posedge clk) begin
                 if(spi_clock_phase == 1'b0) begin
                     if(operation == READ) begin
                         if(sclk_toggle_count > ((OUTGOING_DATA_WIDTH*2)+EXTRA_READ_SCLK_TOGGLES)-1) begin
-                           // incoming_data_buffer <= incoming_data_buffer << 1;
-                           // incoming_data_buffer[0] <=  miso;
-                            
-                            incoming_data <= incoming_data << 1;
-                            incoming_data[0] <= miso;
+                            incoming_data_buffer <= incoming_data_buffer << 1;
+                            incoming_data_buffer[0] <=  miso;
                         end
                     end
                 end
@@ -102,7 +99,7 @@ always @ (posedge clk) begin
                 if(sclk_toggle_count == (OUTGOING_DATA_WIDTH*2)+transaction_toggles) begin
                     ss_n[slave] <= 1'b1;
                     mosi <= 1'bz;
-                    //incoming_data <= incoming_data_buffer;
+                    incoming_data <= incoming_data_buffer;
                     incoming_data_buffer <= {INCOMING_DATA_WIDTH{1'b0}};
                     outgoing_data_buffer <= {OUTGOING_DATA_WIDTH{1'b0}};
                     sclk <= CPOL;

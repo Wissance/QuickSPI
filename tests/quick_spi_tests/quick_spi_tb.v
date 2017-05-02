@@ -14,9 +14,9 @@ reg enable;
 reg start_transaction;
 reg operation;
 
-integer sclk_toggle_count2;
-reg[8:0] incoming_data_buffer2;
-reg spi_clock_phase2;
+integer sclk_toggle_count;
+reg[8:0] incoming_data_buffer;
+reg spi_clock_phase;
 
 initial begin
     clk <= 1'b0;
@@ -30,31 +30,31 @@ always @ (posedge clk) begin
         enable <= 1'b1;
         start_transaction <= 1'b1;
         operation <= 1'b0;
-		
 		miso <= 1'b0;
-		sclk_toggle_count2 <= 0;
-		incoming_data_buffer2 <= 9'b110010101;
-		spi_clock_phase2 <= 1'b1;
+		sclk_toggle_count <= 0;
+		incoming_data_buffer <= 9'b110010101;
+		spi_clock_phase <= 1'b1;
     end
     
     else begin
         if(end_of_transaction) begin
             operation <= ~operation;
-            sclk_toggle_count2 <= 0;
-            spi_clock_phase2 <= 1'b1;
-            incoming_data_buffer2 <= 9'b110010101;
+            sclk_toggle_count <= 0;
+            spi_clock_phase <= 1'b1;
+            incoming_data_buffer <= 9'b110010101;
+			miso <= 1'b0;
         end
         
         else begin
-            if(sclk_toggle_count2 > 36) begin
-                if(!spi_clock_phase2) begin
-                    miso <= incoming_data_buffer2[8];
-                    incoming_data_buffer2 <= incoming_data_buffer2 << 1;
+            if(sclk_toggle_count > 36) begin
+                if(!spi_clock_phase) begin
+                    miso <= incoming_data_buffer[8];
+                    incoming_data_buffer <= incoming_data_buffer << 1;
                 end
             end
             
-            sclk_toggle_count2 <= sclk_toggle_count2 + 1;
-            spi_clock_phase2 <= ~spi_clock_phase2;
+            sclk_toggle_count <= sclk_toggle_count + 1;
+            spi_clock_phase <= ~spi_clock_phase;
         end
     end
 end
