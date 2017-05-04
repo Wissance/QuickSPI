@@ -63,7 +63,7 @@ always @ (posedge clk) begin
                 if(enable) begin
                     if(start_transaction) begin
                         transaction_toggles <= (operation == READ) ? ALL_READ_TOGGLES : EXTRA_WRITE_SCLK_TOGGLES;
-                        outgoing_data_buffer <= outgoing_data;
+                        outgoing_data_buffer <= {outgoing_data[7:0], outgoing_data[15:8]};
                         state <= ACTIVE;
                     end
                 end
