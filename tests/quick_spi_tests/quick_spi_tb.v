@@ -26,13 +26,13 @@ end
 
 always @ (posedge clk) begin
     if(!rst_n) begin
-        outgoing_data <= 16'b0101101001011010;
+        outgoing_data <= {8'b01011010, 8'b01101010};
         enable <= 1'b1;
         start_transaction <= 1'b1;
         operation <= 1'b0;
 		miso <= 1'b0;
 		sclk_toggle_count <= 0;
-		incoming_data_buffer <= 9'b110010101;
+		incoming_data_buffer <= {8'b10010101, 1'b1};
 		spi_clock_phase <= 1'b1;
     end
     
@@ -41,15 +41,15 @@ always @ (posedge clk) begin
             operation <= ~operation;
             sclk_toggle_count <= 0;
             spi_clock_phase <= 1'b1;
-            incoming_data_buffer <= 9'b110010101;
+            incoming_data_buffer <= {8'b10010101, 1'b1};
 			miso <= 1'b0;
         end
         
         else begin
             if(sclk_toggle_count > 36) begin
                 if(!spi_clock_phase) begin
-                    miso <= incoming_data_buffer[8];
-                    incoming_data_buffer <= incoming_data_buffer << 1;
+                    miso <= incoming_data_buffer[0];
+                    incoming_data_buffer <= incoming_data_buffer >> 1;
                 end
             end
             
