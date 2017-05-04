@@ -83,9 +83,6 @@ always @ (posedge clk) begin
                 if(spi_clock_phase == 1'b0) begin
                     if(operation == READ) begin
                         if(sclk_toggle_count > ((OUTGOING_DATA_WIDTH*2)+EXTRA_READ_SCLK_TOGGLES)-1) begin
-                            /*incoming_data_buffer <= incoming_data_buffer << 1;
-                            incoming_data_buffer[0] <=  miso;*/
-                            
                             incoming_data_buffer <= incoming_data_buffer >> 1;
                             incoming_data_buffer[INCOMING_DATA_WIDTH-1] <=  miso;
                         end
@@ -93,10 +90,7 @@ always @ (posedge clk) begin
                 end
                 
                 else begin 
-                    if(sclk_toggle_count < (OUTGOING_DATA_WIDTH*2)-1) begin
-                        /*mosi <= outgoing_data_buffer[OUTGOING_DATA_WIDTH - 1];
-                        outgoing_data_buffer <= outgoing_data_buffer << 1;*/
-                        
+                    if(sclk_toggle_count < (OUTGOING_DATA_WIDTH*2)-1) begin                        
                         mosi <= outgoing_data_buffer[0];
                         outgoing_data_buffer <= outgoing_data_buffer >> 1;
                     end
