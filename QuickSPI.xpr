@@ -3,7 +3,7 @@
 <!--                                                         -->
 <!-- Copyright 1986-2016 Xilinx, Inc. All Rights Reserved.   -->
 
-<Project Version="7" Minor="14" Path="E:/oms/QuickSPI/QuickSPI.xpr">
+<Project Version="7" Minor="14" Path="D:/Projects/QuickSPI/QuickSPI.xpr">
   <DefaultLaunch Dir="$PRUNDIR"/>
   <Configuration>
     <Option Name="Id" Val="1a41a413bb1e4c299368e2f6d49bb6ee"/>
@@ -62,6 +62,7 @@
       </Config>
     </FileSet>
     <FileSet Name="quick_spi_tests" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/quick_spi_tests">
+      <Filter Type="Srcs"/>
       <File Path="$PPRDIR/tests/quick_spi_tests/quick_spi_tb.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>

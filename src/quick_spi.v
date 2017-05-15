@@ -1,13 +1,16 @@
 `timescale 1ns / 1ps
 
-module quick_spi #(
+module quick_spi #
+(
     parameter INCOMING_DATA_WIDTH = 8,
     parameter OUTGOING_DATA_WIDTH = 16,
     parameter CPOL = 0,
     parameter CPHA = 0,
     parameter EXTRA_WRITE_SCLK_TOGGLES = 6,
     parameter EXTRA_READ_SCLK_TOGGLES = 4,
-    parameter NUMBER_OF_SLAVES = 2)
+    parameter NUMBER_OF_SLAVES = 2,
+    parameter MOSI_IDLE_VALUE = 1'b0
+)
 (
     input wire clk,
     input wire reset_n,
@@ -45,7 +48,7 @@ reg[OUTGOING_DATA_WIDTH-1:0] outgoing_data_buffer;
 always @ (posedge clk) begin
     if(!reset_n) begin
         end_of_transaction <= 1'b0;
-        mosi <= 1'bz;
+        mosi <= MOSI_IDLE_VALUE;//1'bz;
         sclk <= CPOL;
         ss_n <= {NUMBER_OF_SLAVES{1'b1}};
         sclk_toggle_count <= 0;
