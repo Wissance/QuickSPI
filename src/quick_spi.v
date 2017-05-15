@@ -7,17 +7,22 @@
 
 module quick_spi #
 (
+    // slaves number
+    parameter NUMBER_OF_SLAVES = 2,
+	// data transfer parameters (data bus width, words quantity, e.t.c)
     parameter INCOMING_DATA_WIDTH = 8,
     parameter OUTGOING_DATA_WIDTH = 16,
-    parameter CPOL = 0,
-    parameter CPHA = 0,
-    parameter EXTRA_WRITE_SCLK_TOGGLES = 6,
-    parameter EXTRA_READ_SCLK_TOGGLES = 4,
-    parameter NUMBER_OF_SLAVES = 2,
-    parameter MOSI_IDLE_VALUE = 1'b0,
+	// bits and bytes order (how outgoing data is popping from buffer)
 	parameter BITS_ORDER = `MSB_FIRST,
 	parameter BYTES_ORDER = `LITTLE_ENDIAN,
-	parameter OUTGOING_DATA_USING_BITS = OUTGOING_DATA_WIDTH
+	// extra toggles
+	parameter EXTRA_WRITE_SCLK_TOGGLES = 6,
+    parameter EXTRA_READ_SCLK_TOGGLES = 4,
+	// clock polarity and phase
+    parameter CPOL = 0,
+    parameter CPHA = 0,
+	// idle values
+    parameter MOSI_IDLE_VALUE = 1'b0
 )
 (
     input wire clk,
@@ -40,6 +45,9 @@ localparam WRITE = 1'b1;
 localparam READ_SCLK_TOGGLES = (INCOMING_DATA_WIDTH * 2) + 2;
 localparam ALL_READ_TOGGLES = EXTRA_READ_SCLK_TOGGLES + READ_SCLK_TOGGLES;
 
+// at least 1, because we could transfer i.e. 6 or 5 bits ()
+localparam NUMBER_OF_BYTES = OUTGOING_DATA_WIDTH > 1 ? OUTGOING_DATA_WIDTH / 8 : 1;
+
 integer sclk_toggle_count;
 integer transaction_toggles;
 
@@ -53,8 +61,10 @@ localparam WAIT = 2'b10;
 reg[INCOMING_DATA_WIDTH-1:0] incoming_data_buffer;
 reg[OUTGOING_DATA_WIDTH-1:0] outgoing_data_buffer;
     
-always @ (posedge clk) begin
-    if(!reset_n) begin
+always @ (posedge clk) 
+begin
+    if(!reset_n) 
+	begin
         end_of_transaction <= 1'b0;
         mosi <= MOSI_IDLE_VALUE;//1'bz;
         sclk <= CPOL;
@@ -70,9 +80,12 @@ always @ (posedge clk) begin
     
     else begin
         case(state)
-            IDLE: begin                
-                if(enable) begin
-                    if(start_transaction) begin
+            IDLE: 
+			begin                
+                if(enable) 
+				begin
+                    if(start_transaction) 
+					begin
                         transaction_toggles <= (operation == READ) ? ALL_READ_TOGGLES : EXTRA_WRITE_SCLK_TOGGLES;
                         outgoing_data_buffer <= {outgoing_data[7:0], outgoing_data[15:8]};
                         state <= ACTIVE;
@@ -80,36 +93,45 @@ always @ (posedge clk) begin
                 end
             end
             
-            ACTIVE: begin
+            ACTIVE: 
+			begin
                 ss_n[slave] <= 1'b0;
                 spi_clock_phase <= ~spi_clock_phase;
                 
-                if(ss_n[slave] == 1'b0) begin
-                    if(sclk_toggle_count < (OUTGOING_DATA_WIDTH*2)+transaction_toggles) begin
+                if(ss_n[slave] == 1'b0) 
+				begin
+                    if(sclk_toggle_count < (OUTGOING_DATA_WIDTH * 2) + transaction_toggles) 
+					begin
                         sclk <= ~sclk;
                         sclk_toggle_count <= sclk_toggle_count + 1;
                     end
                 end
                 
-                if(spi_clock_phase == 1'b0) begin
-                    if(operation == READ) begin
-                        if(sclk_toggle_count > ((OUTGOING_DATA_WIDTH*2)+EXTRA_READ_SCLK_TOGGLES)-1) begin
+                if(spi_clock_phase == 1'b0) 
+				begin
+                    if(operation == READ) 
+					begin
+                        if(sclk_toggle_count > ((OUTGOING_DATA_WIDTH * 2) + EXTRA_READ_SCLK_TOGGLES)-1) 
+						begin
                             incoming_data_buffer <= incoming_data_buffer >> 1;
                             incoming_data_buffer[INCOMING_DATA_WIDTH-1] <=  miso;
                         end
                     end
                 end
                 
-                else begin 
-                    if(sclk_toggle_count < (OUTGOING_DATA_WIDTH*2)-1) begin                        
-                        mosi <= outgoing_data_buffer[0];
+                else 
+				begin 
+                    if(sclk_toggle_count < (OUTGOING_DATA_WIDTH * 2) - 1)
+					begin                        
+                        mosi <= outgoing_data_buffer[0]; // posiibly here we are passing BITS ORDER
                         outgoing_data_buffer <= outgoing_data_buffer >> 1;
                     end
                 end
                 
-                if(sclk_toggle_count == (OUTGOING_DATA_WIDTH*2)+transaction_toggles) begin
+                if(sclk_toggle_count == (OUTGOING_DATA_WIDTH * 2) + transaction_toggles) 
+				begin
                     ss_n[slave] <= 1'b1;
-                    mosi <= 1'bz;
+                    mosi <= MOSI_IDLE_VALUE; //1'bz;
                     incoming_data <= incoming_data_buffer;
                     incoming_data_buffer <= {INCOMING_DATA_WIDTH{1'b0}};
                     outgoing_data_buffer <= {OUTGOING_DATA_WIDTH{1'b0}};
@@ -121,7 +143,8 @@ always @ (posedge clk) begin
                 end
             end
             
-            WAIT: begin
+            WAIT: 
+			begin
                 incoming_data <= {INCOMING_DATA_WIDTH{1'b0}};
                 end_of_transaction <= 1'b0;
                 state <= IDLE;
