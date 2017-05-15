@@ -1,5 +1,10 @@
 `timescale 1ns / 1ps
 
+`define LSB_FIRST 0
+`define MSB_FIRST 1
+`define LITTLE_ENDIAN 0
+`define BIG_ENDIAN 1
+
 module quick_spi #
 (
     parameter INCOMING_DATA_WIDTH = 8,
@@ -9,7 +14,10 @@ module quick_spi #
     parameter EXTRA_WRITE_SCLK_TOGGLES = 6,
     parameter EXTRA_READ_SCLK_TOGGLES = 4,
     parameter NUMBER_OF_SLAVES = 2,
-    parameter MOSI_IDLE_VALUE = 1'b0
+    parameter MOSI_IDLE_VALUE = 1'b0,
+	parameter BITS_ORDER = `MSB_FIRST,
+	parameter BYTES_ORDER = `LITTLE_ENDIAN,
+	parameter OUTGOING_DATA_USING_BITS = OUTGOING_DATA_WIDTH
 )
 (
     input wire clk,
