@@ -47,16 +47,19 @@ localparam ALL_READ_TOGGLES = EXTRA_READ_SCLK_TOGGLES + READ_SCLK_TOGGLES;
 
 // at least 1, because we could transfer i.e. 6 or 5 bits ()
 localparam NUMBER_OF_BYTES = OUTGOING_DATA_WIDTH > 1 ? OUTGOING_DATA_WIDTH / 8 : 1;
+localparam MAX_BYTES_INDEX = NUMBER_OF_BYTES - 1;
 
 integer sclk_toggle_count;
 integer transaction_toggles;
 
 reg spi_clock_phase;
 reg[1:0] state;
+reg[7:0] byte_counter;
 
 localparam IDLE = 2'b00;
 localparam ACTIVE = 2'b01;
 localparam WAIT = 2'b10;
+//localparam MAX_TRANSACTION_BITS_NUMBER = 
 
 reg[INCOMING_DATA_WIDTH-1:0] incoming_data_buffer;
 reg[OUTGOING_DATA_WIDTH-1:0] outgoing_data_buffer;
@@ -87,7 +90,8 @@ begin
                     if(start_transaction) 
 					begin
                         transaction_toggles <= (operation == READ) ? ALL_READ_TOGGLES : EXTRA_WRITE_SCLK_TOGGLES;
-                        outgoing_data_buffer <= {outgoing_data[7:0], outgoing_data[15:8]};
+						for(byte_counter = 0; byte_counter < NUMBER_OF_BYTES; byte_counter = byte_counter + 1)
+						    outgoing_data_buffer = assign_data(outgoing_data, byte_counter, BYTES_ORDER);
                         state <= ACTIVE;
                     end
                 end
@@ -153,3 +157,39 @@ begin
     end
 end
 endmodule
+
+function [OUTGOING_DATA_WIDTH-1:0] assign_data (input reg[OUTGOING_DATA_WIDTH-1:0] data, 
+                                                input reg[7:0] byte_number, input reg order);
+    begin
+    //reg[OUTGOING_DATA_WIDTH-1:0] assigned_data;
+	if (order == `LITTLE_ENDIAN)
+	begin
+	    case (byte_number)
+		    0: assign_data[7:0] = data[63:56];
+			1: assign_data[15:8] = data[55:48];
+			2: assign_data[23:16] = data[47:40];
+			3: assign_data[31:24] = data[39:32];
+			4: assign_data[39:32] = data[31:24];
+			5: assign_data[47:40] = data[23:16];	
+			6: assign_data[55:48] = data[15:8];
+			7: assign_data[63:56] = data[7:0];
+			default: assign_data = assign_data;
+		endcase
+	end
+	else
+	begin
+		case (byte_number)
+		    0: assign_data[7:0] = data[7:0];
+			1: assign_data[15:8] = data[15:8];
+			2: assign_data[23:16] = data[23:16];
+			3: assign_data[31:24] = data[31:24];
+			4: assign_data[39:32] = data[39:32];
+			5: assign_data[47:40] = data[47:40];	
+			6: assign_data[55:48] = data[55:48];
+			7: assign_data[63:56] = data[63:56];
+			default: assign_data = assign_data;
+		endcase
+	end
+	end
+	//assign_data = assigned_data;
+endfunction
