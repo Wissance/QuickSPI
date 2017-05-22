@@ -46,7 +46,9 @@ localparam READ_SCLK_TOGGLES = (INCOMING_DATA_WIDTH * 2) + 2;
 localparam ALL_READ_TOGGLES = EXTRA_READ_SCLK_TOGGLES + READ_SCLK_TOGGLES;
 
 // at least 1, because we could transfer i.e. 6 or 5 bits ()
-localparam NUMBER_OF_BYTES = OUTGOING_DATA_WIDTH > 1 ? OUTGOING_DATA_WIDTH / 8 : 1;
+localparam NUMBER_OF_FULL_BYTES = OUTGOING_DATA_WIDTH > 1 ? (OUTGOING_DATA_WIDTH / 8) : 1;
+localparam NUMBER_OF_PARTICULAR_BITS = OUTGOING_DATA_WIDTH > (NUMBER_OF_FULL_BYTES * 8) ? 1 : 0;
+localparam NUMBER_OF_BYTES = NUMBER_OF_FULL_BYTES + NUMBER_OF_PARTICULAR_BITS;
 localparam MAX_BYTES_INDEX = NUMBER_OF_BYTES - 1;
 
 integer sclk_toggle_count;
@@ -90,8 +92,8 @@ begin
                     if(start_transaction) 
 					begin
                         transaction_toggles <= (operation == READ) ? ALL_READ_TOGGLES : EXTRA_WRITE_SCLK_TOGGLES;
-						for(byte_counter = 0; byte_counter < NUMBER_OF_BYTES; byte_counter = byte_counter + 1)
-						    outgoing_data_buffer = put_data(outgoing_data, byte_counter, BYTES_ORDER);
+						for(byte_counter = 0; byte_counter < NUMBER_OF_FULL_BYTES; byte_counter = byte_counter + 1)
+						    outgoing_data_buffer <= put_data(outgoing_data, byte_counter, BYTES_ORDER);
                         state <= ACTIVE;
                     end
                 end
