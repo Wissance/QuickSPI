@@ -22,10 +22,13 @@ initial begin
     clk <= 1'b0;
     rst_n <= 1'b0;
     rst_n <= #50 1'b1;
+    outgoing_data <= {8'b11000110, 8'b00101000};
 end
 
-always @ (posedge clk) begin
-    if(!rst_n) begin
+always @ (posedge clk) 
+begin
+    if(!rst_n) 
+    begin
         outgoing_data <= {8'b01011010, 8'b01101010};
         enable <= 1'b1;
         start_transaction <= 1'b1;
@@ -36,8 +39,10 @@ always @ (posedge clk) begin
 		spi_clock_phase <= 1'b1;
     end
     
-    else begin
-        if(end_of_transaction) begin
+    else 
+    begin
+        if(end_of_transaction) 
+        begin
             operation <= ~operation;
             sclk_toggle_count <= 0;
             spi_clock_phase <= 1'b1;
@@ -45,9 +50,12 @@ always @ (posedge clk) begin
 			miso <= 1'b0;
         end
         
-        else begin
-            if(sclk_toggle_count > 36) begin
-                if(!spi_clock_phase) begin
+        else 
+        begin
+            if(sclk_toggle_count > 36) 
+            begin
+                if(!spi_clock_phase) 
+                begin
                     miso <= incoming_data_buffer[0];
                     incoming_data_buffer <= incoming_data_buffer >> 1;
                 end
@@ -59,7 +67,12 @@ always @ (posedge clk) begin
     end
 end
 
-quick_spi spi(
+quick_spi #
+(
+    .BYTES_ORDER(0) // little endian
+)
+spi
+(
     .clk(clk),
     .reset_n(rst_n),
     .enable(enable),
@@ -72,7 +85,8 @@ quick_spi spi(
     .mosi(mosi),
     .miso(miso),
     .sclk(sclk),
-    .ss_n(ss_n));
+    .ss_n(ss_n)
+);
 
 always #25 clk <= ~clk;
 

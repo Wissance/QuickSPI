@@ -1,3 +1,23 @@
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 
+// Design Name: 
+// Module Name: quick_spi
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: spi module with arbitrary data length up to 64 bits,
+//              i.e it could send 37 or 23 or 11 bits 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 1.0
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
 `timescale 1ns / 1ps
 
 `define LSB_FIRST 0
@@ -93,7 +113,7 @@ begin
 					begin
                         transaction_toggles <= (operation == READ) ? ALL_READ_TOGGLES : EXTRA_WRITE_SCLK_TOGGLES;
 						for(byte_counter = 0; byte_counter < NUMBER_OF_FULL_BYTES; byte_counter = byte_counter + 1)
-						    outgoing_data_buffer <= put_data(outgoing_data, byte_counter, BYTES_ORDER);
+						    outgoing_data_buffer <= outgoing_data_buffer | put_data(outgoing_data, byte_counter, BYTES_ORDER);
                         state <= ACTIVE;
                     end
                 end
@@ -160,9 +180,6 @@ begin
 end
 
 function [63:0] put_data(input [63:0] data, input [7:0] byte_number, input order);
-//input [63:0] data;
-//input [7:0] byte_number; 
-//input order;
 begin
 	if (order == `LITTLE_ENDIAN)
 	begin
