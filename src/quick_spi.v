@@ -91,7 +91,7 @@ begin
 					begin
                         transaction_toggles <= (operation == READ) ? ALL_READ_TOGGLES : EXTRA_WRITE_SCLK_TOGGLES;
 						for(byte_counter = 0; byte_counter < NUMBER_OF_BYTES; byte_counter = byte_counter + 1)
-						    outgoing_data_buffer = assign_data(outgoing_data, byte_counter, BYTES_ORDER);
+						    outgoing_data_buffer = put_data(outgoing_data, byte_counter, BYTES_ORDER);
                         state <= ACTIVE;
                     end
                 end
@@ -158,38 +158,38 @@ begin
 end
 endmodule
 
-function [OUTGOING_DATA_WIDTH-1:0] assign_data (input reg[OUTGOING_DATA_WIDTH-1:0] data, 
+function [OUTGOING_DATA_WIDTH-1:0] put_data (input reg[OUTGOING_DATA_WIDTH-1:0] data, 
                                                 input reg[7:0] byte_number, input reg order);
     begin
     //reg[OUTGOING_DATA_WIDTH-1:0] assigned_data;
 	if (order == `LITTLE_ENDIAN)
 	begin
 	    case (byte_number)
-		    0: assign_data[7:0] = data[63:56];
-			1: assign_data[15:8] = data[55:48];
-			2: assign_data[23:16] = data[47:40];
-			3: assign_data[31:24] = data[39:32];
-			4: assign_data[39:32] = data[31:24];
-			5: assign_data[47:40] = data[23:16];	
-			6: assign_data[55:48] = data[15:8];
-			7: assign_data[63:56] = data[7:0];
-			default: assign_data = assign_data;
+		    0: put_data[7:0] = data[63:56];
+			1: put_data[15:8] = data[55:48];
+			2: put_data[23:16] = data[47:40];
+			3: put_data[31:24] = data[39:32];
+			4: put_data[39:32] = data[31:24];
+			5: put_data[47:40] = data[23:16];	
+			6: put_data[55:48] = data[15:8];
+			7: put_data[63:56] = data[7:0];
+			default: put_data = put_data;
 		endcase
 	end
 	else
 	begin
 		case (byte_number)
-		    0: assign_data[7:0] = data[7:0];
-			1: assign_data[15:8] = data[15:8];
-			2: assign_data[23:16] = data[23:16];
-			3: assign_data[31:24] = data[31:24];
-			4: assign_data[39:32] = data[39:32];
-			5: assign_data[47:40] = data[47:40];	
-			6: assign_data[55:48] = data[55:48];
-			7: assign_data[63:56] = data[63:56];
-			default: assign_data = assign_data;
+		    0: put_data[7:0] = data[7:0];
+			1: put_data[15:8] = data[15:8];
+			2: put_data[23:16] = data[23:16];
+			3: put_data[31:24] = data[31:24];
+			4: put_data[39:32] = data[39:32];
+			5: put_data[47:40] = data[47:40];	
+			6: put_data[55:48] = data[55:48];
+			7: put_data[63:56] = data[63:56];
+			default: put_data = put_data;
 		endcase
 	end
 	end
-	//assign_data = assigned_data;
+	//put_data = assigned_data;
 endfunction
