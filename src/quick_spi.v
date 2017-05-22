@@ -158,10 +158,12 @@ begin
         endcase
     end
 end
-endmodule
 
-function [63:0] put_data (input reg[63:0] data, input reg[7:0] byte_number, input reg order);
-    begin
+function [63:0] put_data(input [63:0] data, input [7:0] byte_number, input order);
+//input [63:0] data;
+//input [7:0] byte_number; 
+//input order;
+begin
 	if (order == `LITTLE_ENDIAN)
 	begin
 	    case (byte_number)
@@ -173,7 +175,7 @@ function [63:0] put_data (input reg[63:0] data, input reg[7:0] byte_number, inpu
 			5: put_data[47:40] = data[23:16];	
 			6: put_data[55:48] = data[15:8];
 			7: put_data[63:56] = data[7:0];
-			default: put_data = put_data;
+			default: put_data = 0;
 		endcase
 	end
 	else
@@ -187,8 +189,10 @@ function [63:0] put_data (input reg[63:0] data, input reg[7:0] byte_number, inpu
 			5: put_data[47:40] = data[47:40];	
 			6: put_data[55:48] = data[55:48];
 			7: put_data[63:56] = data[63:56];
-			default: put_data = put_data;
+			default: put_data = 0;
 		endcase
 	end
-	end
+end
 endfunction
+
+endmodule
