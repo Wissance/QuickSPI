@@ -158,10 +158,8 @@ begin
 end
 endmodule
 
-function [OUTGOING_DATA_WIDTH-1:0] put_data (input reg[OUTGOING_DATA_WIDTH-1:0] data, 
-                                                input reg[7:0] byte_number, input reg order);
+function [63:0] put_data (input reg[63:0] data, input reg[7:0] byte_number, input reg order);
     begin
-    //reg[OUTGOING_DATA_WIDTH-1:0] assigned_data;
 	if (order == `LITTLE_ENDIAN)
 	begin
 	    case (byte_number)
@@ -191,5 +189,4 @@ function [OUTGOING_DATA_WIDTH-1:0] put_data (input reg[OUTGOING_DATA_WIDTH-1:0] 
 		endcase
 	end
 	end
-	//put_data = assigned_data;
 endfunction
