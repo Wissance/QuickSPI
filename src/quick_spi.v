@@ -26,6 +26,7 @@
 `define BIG_ENDIAN 1
 
 `define MAX_DATA_WIDTH 64
+`define MAX_DATA_BYTES = MAX_DATA_WIDTH / 8
 
 module quick_spi #
 (
@@ -78,15 +79,15 @@ integer transaction_toggles;
 
 reg spi_clock_phase;
 reg[1:0] state;
-reg[7:0] byte_counter;
+//reg[7:0] byte_counter;
 
 localparam IDLE = 2'b00;
 localparam ACTIVE = 2'b01;
 localparam WAIT = 2'b10;
 
-reg[`MAX_DATA_WIDTH - 1:0] int_outgoing_data_buffer;
-reg[INCOMING_DATA_WIDTH-1:0] incoming_data_buffer;
-reg[OUTGOING_DATA_WIDTH-1:0] outgoing_data_buffer;
+//reg[INCOMING_DATA_WIDTH - 1:0] int_outgoing_data_buffer;
+reg[INCOMING_DATA_WIDTH - 1:0] incoming_data_buffer;
+reg[OUTGOING_DATA_WIDTH - 1:0] outgoing_data_buffer;
     
 always @ (posedge clk) 
 begin
@@ -113,10 +114,10 @@ begin
 				begin
                     if(start_transaction) 
 					begin
-					    int_outgoing_data_buffer = outgoing_data | 64'h0;
+					    //int_outgoing_data_buffer = outgoing_data;
                         transaction_toggles <= (operation == READ) ? ALL_READ_TOGGLES : EXTRA_WRITE_SCLK_TOGGLES;
-						for(byte_counter = 0; byte_counter < NUMBER_OF_FULL_BYTES; byte_counter = byte_counter + 1)
-						    outgoing_data_buffer <= outgoing_data_buffer | put_data(int_outgoing_data_buffer , byte_counter, BYTES_ORDER);
+						//for(byte_counter = 0; byte_counter < NUMBER_OF_FULL_BYTES; byte_counter = byte_counter + 1)
+						outgoing_data_buffer <= put_data(outgoing_data, BYTES_ORDER);
                         state <= ACTIVE;
                     end
                 end
@@ -182,11 +183,14 @@ begin
     end
 end
 
-function [63:0] put_data(input reg [`MAX_DATA_WIDTH - 1 : 0] data, input reg [7:0] byte_number, input reg order);
+function [`MAX_DATA_WIDTH - 1:0] put_data(input reg [`MAX_DATA_WIDTH - 1 : 0] data, input reg order);
 begin
+    //reg[7:0] shift = NUMBER_OF_BYTES - byte_number)
 	if (order == `LITTLE_ENDIAN)
 	begin
-	    case (byte_number)
+	     put_data = {data[63:56], data[55:48], data[47:40], data[39:32], data[31:24], data[23:16], data[15:8], data[7:0]};
+	    //NUMBER_OF_BYTES - byte_number) * 8
+	    /*case (byte_number)
 		    0: put_data[7:0] = data[63:56];
 			1: put_data[15:8] = data[55:48];
 			2: put_data[23:16] = data[47:40];
@@ -196,11 +200,13 @@ begin
 			6: put_data[55:48] = data[15:8];
 			7: put_data[63:56] = data[7:0];
 			default: put_data = 0;
-		endcase
+		endcase*/
 	end
 	else
 	begin
-		case (byte_number)
+	    put_data[63:0] = data[63:0];
+		/*case (byte_number)
+		    
 		    0: put_data[7:0] = data[7:0];
 			1: put_data[15:8] = data[15:8];
 			2: put_data[23:16] = data[23:16];
@@ -210,7 +216,7 @@ begin
 			6: put_data[55:48] = data[55:48];
 			7: put_data[63:56] = data[63:56];
 			default: put_data = 0;
-		endcase
+		endcase*/
 	end
 end
 endfunction
