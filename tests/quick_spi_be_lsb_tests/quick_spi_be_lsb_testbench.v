@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module quick_spi_tb;
+module quick_spi_be_lsb_testbench;
 reg clk;
 reg rst_n;
 wire end_of_transaction;

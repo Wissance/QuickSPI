@@ -25,6 +25,8 @@
 `define LITTLE_ENDIAN 0
 `define BIG_ENDIAN 1
 
+`define MAX_DATA_WIDTH 64
+
 module quick_spi #
 (
     // slaves number
@@ -66,7 +68,7 @@ localparam READ_SCLK_TOGGLES = (INCOMING_DATA_WIDTH * 2) + 2;
 localparam ALL_READ_TOGGLES = EXTRA_READ_SCLK_TOGGLES + READ_SCLK_TOGGLES;
 
 // at least 1, because we could transfer i.e. 6 or 5 bits ()
-localparam NUMBER_OF_FULL_BYTES = OUTGOING_DATA_WIDTH > 1 ? (OUTGOING_DATA_WIDTH / 8) : 1;
+localparam NUMBER_OF_FULL_BYTES = OUTGOING_DATA_WIDTH > 1 ? (OUTGOING_DATA_WIDTH / 8) : 0;
 localparam NUMBER_OF_PARTICULAR_BITS = OUTGOING_DATA_WIDTH > (NUMBER_OF_FULL_BYTES * 8) ? 1 : 0;
 localparam NUMBER_OF_BYTES = NUMBER_OF_FULL_BYTES + NUMBER_OF_PARTICULAR_BITS;
 localparam MAX_BYTES_INDEX = NUMBER_OF_BYTES - 1;
@@ -81,8 +83,8 @@ reg[7:0] byte_counter;
 localparam IDLE = 2'b00;
 localparam ACTIVE = 2'b01;
 localparam WAIT = 2'b10;
-//localparam MAX_TRANSACTION_BITS_NUMBER = 
 
+reg[`MAX_DATA_WIDTH - 1:0] int_outgoing_data_buffer;
 reg[INCOMING_DATA_WIDTH-1:0] incoming_data_buffer;
 reg[OUTGOING_DATA_WIDTH-1:0] outgoing_data_buffer;
     
@@ -91,7 +93,7 @@ begin
     if(!reset_n) 
 	begin
         end_of_transaction <= 1'b0;
-        mosi <= MOSI_IDLE_VALUE;//1'bz;
+        mosi <= MOSI_IDLE_VALUE;
         sclk <= CPOL;
         ss_n <= {NUMBER_OF_SLAVES{1'b1}};
         sclk_toggle_count <= 0;
@@ -111,9 +113,10 @@ begin
 				begin
                     if(start_transaction) 
 					begin
+					    int_outgoing_data_buffer = outgoing_data | 64'h0;
                         transaction_toggles <= (operation == READ) ? ALL_READ_TOGGLES : EXTRA_WRITE_SCLK_TOGGLES;
 						for(byte_counter = 0; byte_counter < NUMBER_OF_FULL_BYTES; byte_counter = byte_counter + 1)
-						    outgoing_data_buffer <= outgoing_data_buffer | put_data(outgoing_data, byte_counter, BYTES_ORDER);
+						    outgoing_data_buffer <= outgoing_data_buffer | put_data(int_outgoing_data_buffer , byte_counter, BYTES_ORDER);
                         state <= ACTIVE;
                     end
                 end
@@ -157,7 +160,7 @@ begin
                 if(sclk_toggle_count == (OUTGOING_DATA_WIDTH * 2) + transaction_toggles) 
 				begin
                     ss_n[slave] <= 1'b1;
-                    mosi <= MOSI_IDLE_VALUE; //1'bz;
+                    mosi <= MOSI_IDLE_VALUE;
                     incoming_data <= incoming_data_buffer;
                     incoming_data_buffer <= {INCOMING_DATA_WIDTH{1'b0}};
                     outgoing_data_buffer <= {OUTGOING_DATA_WIDTH{1'b0}};
@@ -179,7 +182,7 @@ begin
     end
 end
 
-function [63:0] put_data(input [63:0] data, input [7:0] byte_number, input order);
+function [63:0] put_data(input reg [`MAX_DATA_WIDTH - 1 : 0] data, input reg [7:0] byte_number, input reg order);
 begin
 	if (order == `LITTLE_ENDIAN)
 	begin

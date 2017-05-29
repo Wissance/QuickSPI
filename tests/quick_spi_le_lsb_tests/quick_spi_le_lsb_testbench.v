@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module quick_spi_tb;
+module quick_spi_le_lsb_testbench;
 reg clk;
 reg rst_n;
 wire end_of_transaction;
@@ -69,7 +69,7 @@ end
 
 quick_spi #
 (
-    .BYTES_ORDER(1) // big endian
+    .BYTES_ORDER(0) // little endian
 )
 spi
 (
