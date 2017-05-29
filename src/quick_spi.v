@@ -26,7 +26,6 @@
 `define BIG_ENDIAN 1
 
 `define MAX_DATA_WIDTH 64
-`define MAX_DATA_BYTES = MAX_DATA_WIDTH / 8
 
 module quick_spi #
 (
@@ -79,13 +78,11 @@ integer transaction_toggles;
 
 reg spi_clock_phase;
 reg[1:0] state;
-//reg[7:0] byte_counter;
 
 localparam IDLE = 2'b00;
 localparam ACTIVE = 2'b01;
 localparam WAIT = 2'b10;
 
-//reg[INCOMING_DATA_WIDTH - 1:0] int_outgoing_data_buffer;
 reg[INCOMING_DATA_WIDTH - 1:0] incoming_data_buffer;
 reg[OUTGOING_DATA_WIDTH - 1:0] outgoing_data_buffer;
     
@@ -114,9 +111,7 @@ begin
 				begin
                     if(start_transaction) 
 					begin
-					    //int_outgoing_data_buffer = outgoing_data;
                         transaction_toggles <= (operation == READ) ? ALL_READ_TOGGLES : EXTRA_WRITE_SCLK_TOGGLES;
-						//for(byte_counter = 0; byte_counter < NUMBER_OF_FULL_BYTES; byte_counter = byte_counter + 1)
 						outgoing_data_buffer <= put_data(outgoing_data, BYTES_ORDER);
                         state <= ACTIVE;
                     end
@@ -184,11 +179,17 @@ begin
 end
 
 function [`MAX_DATA_WIDTH - 1:0] put_data(input reg [`MAX_DATA_WIDTH - 1 : 0] data, input reg order);
+    reg [`MAX_DATA_WIDTH - 1:0] result;
+    reg[7:0] shift;   
 begin
-    //reg[7:0] shift = NUMBER_OF_BYTES - byte_number)
+    
 	if (order == `LITTLE_ENDIAN)
 	begin
-	     put_data = {data[63:56], data[55:48], data[47:40], data[39:32], data[31:24], data[23:16], data[15:8], data[7:0]};
+	     shift = `MAX_DATA_WIDTH - NUMBER_OF_BYTES * 8;
+	     result = {data[63:56], data[55:48], data[47:40], data[39:32], data[31:24], data[23:16], data[15:8], data[7:0]};
+		 if(!shift)
+		     result = result >> shift;
+		 put_data = result;
 	    //NUMBER_OF_BYTES - byte_number) * 8
 	    /*case (byte_number)
 		    0: put_data[7:0] = data[63:56];
@@ -204,7 +205,7 @@ begin
 	end
 	else
 	begin
-	    put_data[63:0] = data[63:0];
+	    put_data = data;
 		/*case (byte_number)
 		    
 		    0: put_data[7:0] = data[7:0];
