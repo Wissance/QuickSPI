@@ -85,6 +85,7 @@ localparam WAIT = 2'b10;
 
 reg[INCOMING_DATA_WIDTH - 1:0] incoming_data_buffer;
 reg[OUTGOING_DATA_WIDTH - 1:0] outgoing_data_buffer;
+reg[`MAX_DATA_WIDTH - 1:0] intermediate_buffer;
     
 always @ (posedge clk) 
 begin
@@ -112,7 +113,8 @@ begin
                     if(start_transaction) 
 					begin
                         transaction_toggles <= (operation == READ) ? ALL_READ_TOGGLES : EXTRA_WRITE_SCLK_TOGGLES;
-						outgoing_data_buffer <= put_data(outgoing_data, BYTES_ORDER);
+						intermediate_buffer = put_data(outgoing_data, BYTES_ORDER);
+				        outgoing_data_buffer <= intermediate_buffer[15:0];
                         state <= ACTIVE;
                     end
                 end
@@ -182,42 +184,21 @@ function [`MAX_DATA_WIDTH - 1:0] put_data(input reg [`MAX_DATA_WIDTH - 1 : 0] da
     reg [`MAX_DATA_WIDTH - 1:0] result;
     reg[7:0] shift;   
 begin
-    
+    shift = `MAX_DATA_WIDTH - NUMBER_OF_BYTES * 8;
 	if (order == `LITTLE_ENDIAN)
 	begin
-	     shift = `MAX_DATA_WIDTH - NUMBER_OF_BYTES * 8;
-	     result = {data[63:56], data[55:48], data[47:40], data[39:32], data[31:24], data[23:16], data[15:8], data[7:0]};
-		 if(!shift)
-		     result = result >> shift;
-		 put_data = result;
-	    //NUMBER_OF_BYTES - byte_number) * 8
-	    /*case (byte_number)
-		    0: put_data[7:0] = data[63:56];
-			1: put_data[15:8] = data[55:48];
-			2: put_data[23:16] = data[47:40];
-			3: put_data[31:24] = data[39:32];
-			4: put_data[39:32] = data[31:24];
-			5: put_data[47:40] = data[23:16];	
-			6: put_data[55:48] = data[15:8];
-			7: put_data[63:56] = data[7:0];
-			default: put_data = 0;
-		endcase*/
+	      result = {data[7:0], data[15:8], data[23:16], data[31:24], data[39:32], data[47:40], data[55:48], data[63:56]};    
+		 if(shift > 0)
+		     put_data = result >> shift;
+		     //put_data[NUMBER_OF_BYTES * 8 - 1 : 0] = result[`MAX_DATA_WIDTH - 1 : `MAX_DATA_WIDTH - NUMBER_OF_BYTES * 8];
+		 else put_data = result;//data;//result;
 	end
-	else
+	else if (order == `BIG_ENDIAN)
 	begin
-	    put_data = data;
-		/*case (byte_number)
-		    
-		    0: put_data[7:0] = data[7:0];
-			1: put_data[15:8] = data[15:8];
-			2: put_data[23:16] = data[23:16];
-			3: put_data[31:24] = data[31:24];
-			4: put_data[39:32] = data[39:32];
-			5: put_data[47:40] = data[47:40];	
-			6: put_data[55:48] = data[55:48];
-			7: put_data[63:56] = data[63:56];
-			default: put_data = 0;
-		endcase*/
+	    //result = {data[7:0], data[15:8], data[23:16], data[31:24], data[39:32], data[47:40], data[55:48], data[63:56]};
+	    //if(!shift)
+	      //  result = result << 24;//>> 48;//  shift;
+	    put_data = data;//result;
 	end
 end
 endfunction
