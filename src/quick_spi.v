@@ -86,6 +86,9 @@ localparam WAIT = 2'b10;
 reg[INCOMING_DATA_WIDTH - 1:0] incoming_data_buffer;
 reg[OUTGOING_DATA_WIDTH - 1:0] outgoing_data_buffer;
 reg[`MAX_DATA_WIDTH - 1:0] intermediate_buffer;
+
+reg[2:0] bit_counter;
+reg[3:0] byte_counter;
     
 always @ (posedge clk) 
 begin
@@ -102,6 +105,8 @@ begin
         incoming_data_buffer <= {INCOMING_DATA_WIDTH{1'b0}};
         outgoing_data_buffer <= {OUTGOING_DATA_WIDTH{1'b0}};
         state <= IDLE;
+        bit_counter <= 0;
+        byte_counter <= 0;
     end
     
     else begin
@@ -110,6 +115,8 @@ begin
 			begin                
                 if(enable) 
 				begin
+				    bit_counter <= 0;
+                    byte_counter <= 0;
                     if(start_transaction) 
 					begin
                         transaction_toggles <= (operation == READ) ? ALL_READ_TOGGLES : EXTRA_WRITE_SCLK_TOGGLES;
@@ -149,9 +156,23 @@ begin
                 else 
 				begin 
                     if(sclk_toggle_count < (OUTGOING_DATA_WIDTH * 2) - 1)
-					begin                        
-                        mosi <= outgoing_data_buffer[0]; // posiibly here we are passing BITS ORDER
-                        outgoing_data_buffer <= outgoing_data_buffer >> 1;
+					begin
+					    if(BITS_ORDER == `LSB_FIRST)
+					    begin                  
+                            mosi <= outgoing_data_buffer[0]; // posiibly here we are passing BITS ORDER
+                            outgoing_data_buffer <= outgoing_data_buffer >> 1;
+                        end
+                        else
+                        begin
+                            for(byte_counter = 0; byte_counter < NUMBER_OF_BYTES; byte_counter = byte_counter + 1)
+                            begin
+                                for(bit_counter = 7;  bit_counter >= 0; bit_counter = bit_counter - 1)
+                                begin
+                                     mosi <= outgoing_data_buffer[bit_counter];
+                                end
+                                outgoing_data_buffer <= outgoing_data_buffer >> 8;
+                            end    
+                        end
                     end
                 end
                 
