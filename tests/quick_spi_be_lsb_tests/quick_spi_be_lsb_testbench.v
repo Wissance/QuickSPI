@@ -69,7 +69,8 @@ end
 
 quick_spi #
 (
-    .BYTES_ORDER(1) // big endian
+    .BYTES_ORDER(1), // big endian,
+    .BITS_ORDER(0)  // LSB First
 )
 spi
 (
