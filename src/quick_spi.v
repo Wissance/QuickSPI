@@ -191,14 +191,11 @@ begin
 		 if(shift > 0)
 		     put_data = result >> shift;
 		     //put_data[NUMBER_OF_BYTES * 8 - 1 : 0] = result[`MAX_DATA_WIDTH - 1 : `MAX_DATA_WIDTH - NUMBER_OF_BYTES * 8];
-		 else put_data = result;//data;//result;
+		 else put_data = result;
 	end
 	else if (order == `BIG_ENDIAN)
 	begin
-	    //result = {data[7:0], data[15:8], data[23:16], data[31:24], data[39:32], data[47:40], data[55:48], data[63:56]};
-	    //if(!shift)
-	      //  result = result << 24;//>> 48;//  shift;
-	    put_data = data;//result;
+	    put_data = data;
 	end
 end
 endfunction
