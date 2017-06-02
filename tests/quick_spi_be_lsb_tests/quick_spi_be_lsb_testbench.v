@@ -22,14 +22,14 @@ initial begin
     clk <= 1'b0;
     rst_n <= 1'b0;
     rst_n <= #50 1'b1;
-    outgoing_data <= {8'b11001100, 8'b10000001};
+    outgoing_data <= {8'b11001100, 8'b10000010};
 end
 
 always @ (posedge clk) 
 begin
     if(!rst_n) 
     begin
-        outgoing_data <= {8'b11001100, 8'b10000001};
+        outgoing_data <= {8'b11001100, 8'b10000010};
         enable <= 1'b1;
         start_transaction <= 1'b1;
         operation <= 1'b0;

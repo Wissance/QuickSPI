@@ -164,14 +164,17 @@ begin
                         end
                         else
                         begin
-                            for(byte_counter = 0; byte_counter < NUMBER_OF_BYTES; byte_counter = byte_counter + 1)
-                            begin
-                                for(bit_counter = 7;  bit_counter >= 0; bit_counter = bit_counter - 1)
-                                begin
-                                     mosi <= outgoing_data_buffer[bit_counter];
-                                end
-                                outgoing_data_buffer <= outgoing_data_buffer >> 8;
-                            end    
+                            //for(byte_counter = 0; byte_counter < NUMBER_OF_BYTES; byte_counter = byte_counter + 1)
+                            //begin
+                                //for(bit_counter <= 7;  bit_counter > 0; bit_counter <= bit_counter - 1)
+                                //begin
+                                bit_counter <= bit_counter + 1;
+                                    mosi <= outgoing_data_buffer[7 - bit_counter];
+                                if(bit_counter == 7)
+                                    outgoing_data_buffer <= outgoing_data_buffer >> 8;
+                                //end
+                                //outgoing_data_buffer <= outgoing_data_buffer >> 8;
+                            //end    
                         end
                     end
                 end

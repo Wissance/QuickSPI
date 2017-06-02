@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module quick_spi_tb;
+module quick_spi_be_msb_testbench;
 reg clk;
 reg rst_n;
 wire end_of_transaction;
@@ -22,14 +22,14 @@ initial begin
     clk <= 1'b0;
     rst_n <= 1'b0;
     rst_n <= #50 1'b1;
-    outgoing_data <= {8'b11000110, 8'b00101000};
+    outgoing_data <= {8'b11001100, 8'b10000010};
 end
 
 always @ (posedge clk) 
 begin
     if(!rst_n) 
     begin
-        outgoing_data <= {8'b01011010, 8'b01101010};
+        outgoing_data <= {8'b11001100, 8'b10000010};
         enable <= 1'b1;
         start_transaction <= 1'b1;
         operation <= 1'b0;
@@ -69,7 +69,8 @@ end
 
 quick_spi #
 (
-    .BYTES_ORDER(1) // big endian
+    .BYTES_ORDER(1), // big endian,
+    .BITS_ORDER(1)   // MSB First
 )
 spi
 (
