@@ -202,7 +202,7 @@ function [`MAX_DATA_WIDTH - 1:0] put_data(input reg [`MAX_DATA_WIDTH - 1 : 0] da
     reg[7:0] shift;   
 begin
     shift = `MAX_DATA_WIDTH - NUMBER_OF_BYTES * 8;
-	if (order == `LITTLE_ENDIAN)
+	if (order == `BIG_ENDIAN)//`LITTLE_ENDIAN)
 	begin
 	      result = {data[7:0], data[15:8], data[23:16], data[31:24], data[39:32], data[47:40], data[55:48], data[63:56]};    
 		 if(shift > 0)
@@ -210,7 +210,7 @@ begin
 		     //put_data[NUMBER_OF_BYTES * 8 - 1 : 0] = result[`MAX_DATA_WIDTH - 1 : `MAX_DATA_WIDTH - NUMBER_OF_BYTES * 8];
 		 else put_data = result;
 	end
-	else if (order == `BIG_ENDIAN)
+	else if (order == `LITTLE_ENDIAN)//`BIG_ENDIAN)
 	begin
 	    put_data = data;
 	end

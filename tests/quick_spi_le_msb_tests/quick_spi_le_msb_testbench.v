@@ -70,7 +70,7 @@ end
 quick_spi #
 (
     .BYTES_ORDER(0), // little endian,
-    .BITS_ORDER(0)   // LSB First
+    .BITS_ORDER(1)   // MSB First
 )
 spi
 (
