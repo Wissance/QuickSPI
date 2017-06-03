@@ -17,14 +17,14 @@
     <Option Name="CompiledLibDirRiviera" Val="$PCACHEDIR/compile_simlib/riviera"/>
     <Option Name="CompiledLibDirActivehdl" Val="$PCACHEDIR/compile_simlib/activehdl"/>
     <Option Name="BoardPart" Val=""/>
-    <Option Name="ActiveSimSet" Val="quicj_spi_le_msb_testbench"/>
+    <Option Name="ActiveSimSet" Val="quick_spi_be_msb_testbench"/>
     <Option Name="DefaultLib" Val="xil_defaultlib"/>
     <Option Name="EnableCoreContainer" Val="FALSE"/>
     <Option Name="CreateRefXciForCoreContainers" Val="FALSE"/>
     <Option Name="IPUserFilesDir" Val="$PPRDIR/QuickSPI.ip_user_files"/>
     <Option Name="IPStaticSourceDir" Val="$PPRDIR/QuickSPI.ip_user_files/ipstatic"/>
     <Option Name="EnableBDX" Val="FALSE"/>
-    <Option Name="WTXSimLaunchSim" Val="146"/>
+    <Option Name="WTXSimLaunchSim" Val="148"/>
     <Option Name="WTModelSimLaunchSim" Val="0"/>
     <Option Name="WTQuestaLaunchSim" Val="0"/>
     <Option Name="WTIesLaunchSim" Val="0"/>
@@ -99,6 +99,7 @@
       </Config>
     </FileSet>
     <FileSet Name="quicj_spi_le_msb_testbench" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/quicj_spi_le_msb_testbench">
+      <Filter Type="Srcs"/>
       <File Path="$PPRDIR/tests/quick_spi_le_msb_tests/quick_spi_le_msb_testbench.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -117,6 +118,7 @@
       </Config>
     </FileSet>
     <FileSet Name="quick_spi_be_msb_testbench" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/quick_spi_be_msb_testbench">
+      <Filter Type="Srcs"/>
       <File Path="$PPRDIR/tests/quick_spi_be_msb_tests/quick_spi_be_msb_testbench.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
