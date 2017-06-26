@@ -3,8 +3,6 @@
 module quick_spi #(
     parameter INCOMING_DATA_WIDTH = 8,
     parameter OUTGOING_DATA_WIDTH = 16,
-    parameter CPOL = 0,
-    parameter CPHA = 0,
     parameter EXTRA_WRITE_SCLK_TOGGLES = 6,
     parameter EXTRA_READ_SCLK_TOGGLES = 4,
     parameter NUMBER_OF_SLAVES = 2)
@@ -46,6 +44,8 @@ reg[7:0] memory [0: 255];
 
 wire[7:0] num_outgoing_bits = memory[0];
 wire[7:0] num_incoming_bits = memory[1];
+wire[7:0] CPOL = memory[2];
+wire[7:0] CPHA = memory[3];
 
 reg[7:0] num_bits_written;
 reg[7:0] num_bits_read;
@@ -54,6 +54,8 @@ always @ (posedge clk) begin
     if(!reset_n) begin
         memory[0] = /* num_outgoing_bits */ 16;
         memory[1] = /* num_incoming_bits */ 9;
+        memory[2] = /*CPOL*/ 0;
+        memory[3] = /*CPHA*/ 0;
         
         num_bits_written = 0;
         num_bits_read = 0;
