@@ -42,11 +42,22 @@ localparam WAIT = 2'b11;
 reg[INCOMING_DATA_WIDTH-1:0] incoming_data_buffer;
 reg[OUTGOING_DATA_WIDTH-1:0] outgoing_data_buffer;
 
-reg[31:0] num_outgoing_bits;
-reg[31:0] num_incoming_bits;
+reg[7:0] memory [0: 255];
+
+wire[7:0] num_outgoing_bits = memory[0];
+wire[7:0] num_incoming_bits = memory[1];
+
+reg[7:0] num_bits_written;
+reg[7:0] num_bits_read;
     
 always @ (posedge clk) begin
     if(!reset_n) begin
+        memory[0] = /* num_outgoing_bits */ 16;
+        memory[1] = /* num_incoming_bits */ 9;
+        
+        num_bits_written = 0;
+        num_bits_read = 0;
+    
         end_of_transaction <= 1'b0;
         mosi <= 1'bz;
         sclk <= CPOL;
@@ -57,8 +68,6 @@ always @ (posedge clk) begin
         incoming_data <= 0;
         incoming_data_buffer <= 0;
         outgoing_data_buffer <= 0;
-        num_outgoing_bits = 16;
-		num_incoming_bits = 9;
         state <= IDLE;
     end
     
@@ -78,7 +87,8 @@ always @ (posedge clk) begin
                 if(!CPHA) begin
                     mosi <= outgoing_data_buffer[0];
                     outgoing_data_buffer <= outgoing_data_buffer >> 1;
-                    num_outgoing_bits <= num_outgoing_bits - 1;
+                    num_bits_written <= num_bits_written + 1;
+                    
                     state <= ACTIVE;
                 end
             end
@@ -91,19 +101,21 @@ always @ (posedge clk) begin
 				case(spi_clock_phase)
 					1'b0: begin
 						if(operation == READ) begin
-							if(num_incoming_bits != 0) begin
+							if(num_bits_read != num_incoming_bits) begin
 								incoming_data_buffer <= incoming_data_buffer >> 1;
 								incoming_data_buffer[INCOMING_DATA_WIDTH-1] <=  miso;
-								num_incoming_bits <= num_incoming_bits - 1;
+								
+								num_bits_read <= num_bits_read + 1;
 							end
 						end
 					end
 					
 					1'b1: begin
-						if(num_outgoing_bits != 0) begin                        
+						if(num_bits_written != num_outgoing_bits) begin                        
 							mosi <= outgoing_data_buffer[0];
 							outgoing_data_buffer <= outgoing_data_buffer >> 1;
-							num_outgoing_bits <= num_outgoing_bits - 1;
+							
+							num_bits_written <= num_bits_written + 1;
 						end
 					end					
 				endcase
@@ -118,6 +130,10 @@ always @ (posedge clk) begin
                     spi_clock_phase <= CPHA;
                     sclk_toggle_count <= 0;
                     end_of_transaction <= 1'b1;
+                    
+                    num_bits_written = 0;
+                    num_bits_read = 0;
+                    
                     state <= WAIT;
                 end
             end

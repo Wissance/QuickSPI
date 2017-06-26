@@ -44,7 +44,7 @@ always @ (posedge clk) begin
         end
         
         else begin
-            if(sclk_toggle_count > 36) begin
+            if(sclk_toggle_count > 36 && operation == 1'b0) begin
                 if(!spi_clock_phase) begin
                     miso <= incoming_data_buffer[0];
                     incoming_data_buffer <= incoming_data_buffer >> 1;
