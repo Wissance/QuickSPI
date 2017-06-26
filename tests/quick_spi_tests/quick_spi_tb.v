@@ -10,7 +10,6 @@ wire mosi;
 reg miso;
 wire sclk;
 wire[1:0] ss_n;
-reg enable;
 reg start_transaction;
 reg operation;
 
@@ -26,10 +25,9 @@ end
 
 always @ (posedge clk) begin
     if(!rst_n) begin
-        outgoing_data <= {8'b01011010, 8'b01101010};
-        enable <= 1'b1;
+        outgoing_data <= {8'b00011010, 8'b01101010};
         start_transaction <= 1'b1;
-        operation <= 1'b0;
+        operation <= 1'b1;
 		miso <= 1'b0;
 		sclk_toggle_count <= 0;
 		incoming_data_buffer <= {8'b10010101, 1'b1};
@@ -62,7 +60,6 @@ end
 quick_spi spi(
     .clk(clk),
     .reset_n(rst_n),
-    .enable(enable),
     .start_transaction(start_transaction),
     .slave(2'b01),
     .operation(operation),
