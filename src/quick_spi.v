@@ -11,24 +11,13 @@ module quick_spi #(
     input wire reset_n,
     input wire start_transaction,
     input wire[NUMBER_OF_SLAVES-1:0] slave,
-    input wire operation,
-    output reg end_of_transaction,
-    output reg[INCOMING_DATA_WIDTH-1:0] incoming_data,
     input wire[OUTGOING_DATA_WIDTH-1:0] outgoing_data,
     output reg mosi,
     input wire miso,
     output reg sclk,
     output reg[NUMBER_OF_SLAVES-1:0] ss_n);
 
-localparam READ = 1'b0;
-localparam WRITE = 1'b1;
-
-localparam READ_SCLK_TOGGLES = (INCOMING_DATA_WIDTH * 2) + 2;
-localparam ALL_READ_TOGGLES = EXTRA_READ_SCLK_TOGGLES + READ_SCLK_TOGGLES;
-
-integer sclk_toggle_count;
-integer transaction_toggles;
-
+reg[31:0] sclk_toggle_count;
 reg spi_clock_phase;
 
 localparam SM1_IDLE = 2'b00;
@@ -39,6 +28,8 @@ reg[1:0] sm1_state;
 localparam SM2_WRITE = 2'b00;
 localparam SM2_READ = 2'b01;
 localparam SM2_WAIT = 2'b10;
+localparam SM2_END_DATA_TRANSFER = 2'b11;
+
 reg[1:0] sm2_state;
 reg wait_before_read;
 reg [7:0] num_toggles_to_wait;
@@ -50,13 +41,15 @@ reg[7:0] memory [0: 255];
 wire[7:0] CPOL = memory[0];
 wire[7:0] CPHA = memory[1];
 
-wire[7:0] incoming_element_size;
 wire[7:0] outgoing_element_size = memory[2];
 wire[7:0] num_outgoing_elements = memory[3];
+wire[7:0] incoming_element_size = memory[4];
+
+wire[7:0] num_write_extra_toggles = memory[5];
+wire[7:0] num_read_extra_toggles = memory[6];
 
 reg[7:0] num_bits_read;
 reg[7:0] num_bits_written;
-
 reg[7:0] num_elements_written;
 
 reg[3:0] incoming_byte_bit;
@@ -68,17 +61,21 @@ reg[7:0] num_bytes_written;
 reg[7:0] read_buffer_start;
 reg[7:0] write_buffer_start;
 
+reg burst;
 reg enable_read;
+reg[31:0] extra_toggle_count;
 
 always @ (posedge clk) begin
     if(!reset_n) begin
         memory[0] <= /*CPOL*/ 0;
         memory[1] <= /*CPHA*/ 0;
         memory[2] <= /*outgoing_element_size*/ 16;
-        memory[3] <= /*num_outgoing_elements*/ 1; 
+        memory[3] <= /*num_outgoing_elements*/ 1;
+		memory[4] <= /*incoming_element_size*/ 9;
+		memory[5] <= 3;
+		memory[6] <= 2;
 		
 		num_elements_written <= 0;
-        
 		num_bits_read <= 0;
         num_bits_written <= 0;
 		
@@ -89,16 +86,17 @@ always @ (posedge clk) begin
 		num_bytes_written <= 0;
 		
 		read_buffer_start <= 30;
-		write_buffer_start <= 4;
+		write_buffer_start <= 7;
+		
+		burst <= 1'b0;
+		enable_read <= 1'b1;
+		extra_toggle_count <= 0;
     
-        end_of_transaction <= 1'b0;
         mosi <= 1'bz;
         sclk <= /*CPOL;*/0;
         ss_n <= {NUMBER_OF_SLAVES{1'b1}};
         sclk_toggle_count <= 0;
-        transaction_toggles <= 0;
         spi_clock_phase <= /*CPHA;*/0;
-        incoming_data <= 0;
         sm1_state <= SM1_IDLE;
     end
     
@@ -106,12 +104,11 @@ always @ (posedge clk) begin
         case(sm1_state)
             SM1_IDLE: begin
 				if(start_transaction) begin
-					transaction_toggles <= (operation == READ) ? ALL_READ_TOGGLES : EXTRA_WRITE_SCLK_TOGGLES;
-					
-                    memory[4] <= outgoing_data[15:8];
-                    memory[5] <= outgoing_data[7:0];
-					
+                    memory[7] <= outgoing_data[15:8];
+                    memory[8] <= outgoing_data[7:0];
+				
 					sm1_state <= SM1_SELECT_SLAVE;
+					sm2_state <= SM2_WRITE;
 				end
             end
             
@@ -168,7 +165,7 @@ always @ (posedge clk) begin
 												sm2_state <= SM2_READ;
 											else begin
 												wait_before_read = 1'b1;
-												sm2_state <= SM2_WAIT
+												sm2_state <= SM2_WAIT;
 											end
 										end
 										
@@ -208,10 +205,21 @@ always @ (posedge clk) begin
                     end
 					
 					SM2_WAIT: begin
-						if(wait_before_read)
-							sm2_state <= SM2_READ;
-						else
-							sm2_state <= SM2_END_DATA_TRANSFER;
+						if(wait_before_read) begin
+							if(extra_toggle_count == (num_write_extra_toggles - 1)) begin
+								extra_toggle_count <= 0;
+								sm2_state <= SM2_READ;
+							end
+						end
+							
+						else begin
+							if(extra_toggle_count == (num_read_extra_toggles - 1)) begin
+								extra_toggle_count <= 0;
+								sm2_state <= SM2_END_DATA_TRANSFER;
+							end
+						end		
+							
+						extra_toggle_count <= extra_toggle_count + 1;
 					end
 					
 					SM2_END_DATA_TRANSFER: begin
