@@ -89,7 +89,7 @@ always @ (posedge clk) begin
 		write_buffer_start <= 7;
 		
 		burst <= 1'b0;
-		enable_read <= 1'b1;
+		enable_read <= 1'b0;
 		extra_toggle_count <= 0;
     
         mosi <= 1'bz;
@@ -119,9 +119,26 @@ always @ (posedge clk) begin
 					outgoing_byte_bit <= outgoing_byte_bit + 1;
 					mosi <= memory[write_buffer_start + num_bytes_written][outgoing_byte_bit];
 					num_bits_written <= num_bits_written + 1;
-                    
-                    sm1_state <= SM1_TRANSFER_DATA;
+					
+					if(outgoing_element_size == 1) begin
+						num_elements_written <= 1;
+					
+						if(burst) begin
+							if(num_outgoing_elements == 1)
+								sm2_state <= SM2_END_DATA_TRANSFER;
+							else
+								sm2_state <= SM2_WRITE;
+						end
+						
+						else
+							sm2_state <= SM2_END_DATA_TRANSFER;
+					end
+					
+					else
+						sm2_state <= SM2_WRITE;
                 end
+				
+				sm1_state <= SM1_TRANSFER_DATA;
             end
             
             SM1_TRANSFER_DATA: begin
@@ -132,49 +149,46 @@ always @ (posedge clk) begin
                 case(sm2_state)
                     SM2_WRITE: begin
 						if(!spi_clock_phase) begin
-							if(num_bits_written != outgoing_element_size) begin
-								outgoing_byte_bit <= outgoing_byte_bit + 1;
+							outgoing_byte_bit <= outgoing_byte_bit + 1;
+							
+							if(outgoing_byte_bit == 7) begin
+								num_bytes_written <= num_bytes_written + 1;
+								outgoing_byte_bit <= 0;
+							end
+									
+							mosi <= memory[write_buffer_start + num_bytes_written][outgoing_byte_bit];
+							num_bits_written <= num_bits_written + 1;
+							
+							if(num_bits_written == outgoing_element_size - 1) begin
+								num_elements_written <= num_elements_written + 1;
 								
-								if(outgoing_byte_bit == 7) begin
-									num_bytes_written <= num_bytes_written + 1;
-									outgoing_byte_bit <= 0;
+								if(burst) begin
+									if(num_elements_written == num_outgoing_elements - 1) begin
+										if(!num_write_extra_toggles)
+											sm2_state <= SM2_END_DATA_TRANSFER;
+										else
+											sm2_state <= SM2_WAIT;
+									end
+									
+									else
+										num_bits_written <= 0;
 								end
 								
-								if(num_bits_written == outgoing_element_size - 1)
-									num_elements_written <= num_elements_written + 1;
-										
-								mosi <= memory[write_buffer_start + num_bytes_written][outgoing_byte_bit];
-								num_bits_written <= num_bits_written + 1;
-								
-								if(num_bits_written == outgoing_element_size) begin
-									if(burst) begin
-										if(num_elements_written == num_outgoing_elements) begin
-											if(!num_toggles_to_wait)
-												sm2_state <= SM2_END_DATA_TRANSFER;
-											else
-												sm2_state <= SM2_WAIT;
+								else begin
+									if(enable_read) begin
+										if(!num_write_extra_toggles)
+											sm2_state <= SM2_READ;
+										else begin
+											wait_before_read = 1'b1;
+											sm2_state <= SM2_WAIT;
 										end
-										
-										else
-											num_bits_written <= 0;
 									end
 									
 									else begin
-										if(enable_read) begin
-											if(!num_toggles_to_wait)
-												sm2_state <= SM2_READ;
-											else begin
-												wait_before_read = 1'b1;
-												sm2_state <= SM2_WAIT;
-											end
-										end
-										
-										else begin
-											if(!num_toggles_to_wait)
-												sm2_state <= SM2_END_DATA_TRANSFER;
-											else
-												sm2_state <= SM2_WAIT;
-										end
+										if(!num_write_extra_toggles)
+											sm2_state <= SM2_END_DATA_TRANSFER;
+										else
+											sm2_state <= SM2_WAIT;
 									end
 								end
 							end
@@ -183,23 +197,21 @@ always @ (posedge clk) begin
                     
                     SM2_READ: begin
 						if(spi_clock_phase) begin
-							if(num_bits_read != incoming_element_size) begin
-								incoming_byte_bit <= incoming_byte_bit + 1;
+							incoming_byte_bit <= incoming_byte_bit + 1;
+						
+							if(incoming_byte_bit == 7) begin
+								num_bytes_read <= num_bytes_read + 1;
+								incoming_byte_bit <= 0;
+							end
+														
+							memory[read_buffer_start + num_bytes_read][incoming_byte_bit] <= miso;
+							num_bits_read <= num_bits_read + 1;
 							
-								if(incoming_byte_bit == 7) begin
-									num_bytes_read <= num_bytes_read + 1;
-									incoming_byte_bit <= 0;
-								end
-															
-								memory[read_buffer_start + num_bytes_read][incoming_byte_bit] <= miso;
-								num_bits_read <= num_bits_read + 1;
-								
-								if(num_bits_read == incoming_element_size) begin
-									if(!num_toggles_to_wait)
-										sm2_state <= SM2_END_DATA_TRANSFER;
-									else
-										sm2_state <= SM2_WAIT;
-								end
+							if(num_bits_read == incoming_element_size - 1) begin
+								if(!num_read_extra_toggles)
+									sm2_state <= SM2_END_DATA_TRANSFER;
+								else
+									sm2_state <= SM2_WAIT;
 							end
 						end
                     end
