@@ -1,15 +1,12 @@
 `timescale 1ns / 1ps
 
 module quick_spi #(
-    parameter INCOMING_DATA_WIDTH = 8,
-    parameter OUTGOING_DATA_WIDTH = 16,
     parameter NUMBER_OF_SLAVES = 2)
 (
     input wire clk,
     input wire reset_n,
     input wire start_transaction,
     input wire[NUMBER_OF_SLAVES-1:0] slave,
-    input wire[OUTGOING_DATA_WIDTH-1:0] outgoing_data,
     output reg mosi,
     input wire miso,
     output reg sclk,
@@ -27,13 +24,10 @@ localparam SM2_WRITE = 2'b00;
 localparam SM2_READ = 2'b01;
 localparam SM2_WAIT = 2'b10;
 localparam SM2_END_DATA_TRANSFER = 2'b11;
-
 reg[1:0] sm2_state;
+
 reg wait_after_read;
 reg [7:0] num_toggles_to_wait;
-
-reg[INCOMING_DATA_WIDTH-1:0] incoming_data_buffer;
-
 reg[7:0] memory [0: 255];
 
 wire[7:0] CPOL = memory[0];
@@ -103,8 +97,9 @@ always @ (posedge clk) begin
         case(sm1_state)
             SM1_IDLE: begin
 				if(start_transaction) begin
-                    memory[7] <= outgoing_data[15:8];
-                    memory[8] <= outgoing_data[7:0];
+				//{8'b00011010, 8'b01101010};
+                    memory[7] <= 8'b00011010;
+                    memory[8] <= 8'b01101010;
 				
 					sm1_state <= SM1_SELECT_SLAVE;
 					sm2_state <= SM2_WRITE;
