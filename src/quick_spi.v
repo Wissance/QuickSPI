@@ -122,15 +122,10 @@ always @ (posedge clk) begin
 					if(outgoing_element_size == 1) begin
 						num_elements_written <= 1;
 					
-						if(burst) begin
-							if(num_outgoing_elements == 1)
-								sm2_state <= SM2_END_DATA_TRANSFER;
-							else
-								sm2_state <= SM2_WRITE;
-						end
-						
-						else
-							sm2_state <= SM2_END_DATA_TRANSFER;
+                        if(num_outgoing_elements == 1)
+                            sm2_state <= SM2_WAIT;
+                        else
+                            sm2_state <= SM2_WRITE;
 					end
 					
 					else
