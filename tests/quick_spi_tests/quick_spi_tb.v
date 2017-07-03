@@ -27,7 +27,7 @@ always @ (posedge clk) begin
     if(!rst_n) begin
         outgoing_data <= {8'b00011010, 8'b01101010};
         start_transaction <= 1'b1;
-        operation <= 1'b1;
+        operation <= 1'b0;
 		miso <= 1'b0;
 		sclk_toggle_count <= 0;
 		incoming_data_buffer <= {8'b10010101, 1'b1};

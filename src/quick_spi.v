@@ -1,7 +1,6 @@
 `timescale 1ns / 1ps
 
-module quick_spi #(
-    parameter NUMBER_OF_SLAVES = 2)
+module quick_spi #(parameter NUMBER_OF_SLAVES = 2)
 (
     input wire clk,
     input wire reset_n,
@@ -64,8 +63,8 @@ always @ (posedge clk) begin
         memory[2] <= /*outgoing_element_size*/ 16;
         memory[3] <= /*num_outgoing_elements*/ 1;
 		memory[4] <= /*incoming_element_size*/ 9;
-		memory[5] <= /*num_write_extra_toggles*/3;
-		memory[6] <= /*num_read_extra_toggles*/2;
+		memory[5] <= /*num_write_extra_toggles*/3 + 4;
+		memory[6] <= /*num_read_extra_toggles*/0;
 		
 		num_elements_written <= 0;
 		num_bits_read <= 0;
@@ -81,7 +80,7 @@ always @ (posedge clk) begin
 		write_buffer_start <= 7;
 		
 		burst <= 1'b0;
-		enable_read <= 1'b0;
+		enable_read <= 1'b1;
 		extra_toggle_count <= 0;
 		wait_after_read <= 1'b0;
     
@@ -97,7 +96,6 @@ always @ (posedge clk) begin
         case(sm1_state)
             SM1_IDLE: begin
 				if(start_transaction) begin
-				//{8'b00011010, 8'b01101010};
                     memory[7] <= 8'b00011010;
                     memory[8] <= 8'b01101010;
 				
@@ -120,8 +118,13 @@ always @ (posedge clk) begin
                         if(enable_read)
                             sm2_state <= SM2_READ;
                         else begin
-                            if(num_outgoing_elements == 1)
-                                sm2_state <= SM2_WAIT;
+                            if(num_outgoing_elements == 1) begin
+								if(!num_write_extra_toggles)
+									sm2_state <= SM2_END_DATA_TRANSFER;
+								else
+									sm2_state <= SM2_WAIT;
+							end
+							
                             else
                                 sm2_state <= SM2_WRITE;
                         end
@@ -157,15 +160,22 @@ always @ (posedge clk) begin
 								
 								if(burst) begin
 									if(num_elements_written == num_outgoing_elements - 1) begin
-										sm2_state <= SM2_WAIT;
+										if(!num_write_extra_toggles)
+											sm2_state <= SM2_END_DATA_TRANSFER;
+										else
+											sm2_state <= SM2_WAIT;
 									end
 									
 									else
 										num_bits_written <= 0;
 								end
 								
-								else
-									sm2_state <= SM2_WAIT;
+								else begin
+									if(!num_write_extra_toggles)
+										sm2_state <= SM2_END_DATA_TRANSFER;
+									else
+										sm2_state <= SM2_WAIT;
+								end
 							end
 						end
                     end
@@ -184,12 +194,18 @@ always @ (posedge clk) begin
 							
 							if(num_bits_read == incoming_element_size - 1) begin
 								wait_after_read <= 1'b1;
-								sm2_state <= SM2_WAIT;
+								
+								if(!num_read_extra_toggles)
+									sm2_state <= SM2_END_DATA_TRANSFER;
+								else
+									sm2_state <= SM2_WAIT;
 							end
 						end
                     end
 					
 					SM2_WAIT: begin
+					   extra_toggle_count <= extra_toggle_count + 1;
+					
 						if(wait_after_read) begin
 							if(extra_toggle_count == (num_read_extra_toggles - 1)) begin
 								extra_toggle_count <= 0;
@@ -207,8 +223,6 @@ always @ (posedge clk) begin
                                     sm2_state <= SM2_END_DATA_TRANSFER;
                             end
 						end
-							
-						extra_toggle_count <= extra_toggle_count + 1;
 					end
 					
 					SM2_END_DATA_TRANSFER: begin
