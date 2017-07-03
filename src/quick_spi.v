@@ -31,7 +31,7 @@ localparam SM2_WAIT = 2'b10;
 localparam SM2_END_DATA_TRANSFER = 2'b11;
 
 reg[1:0] sm2_state;
-reg wait_before_read;
+reg wait_after_read;
 reg [7:0] num_toggles_to_wait;
 
 reg[INCOMING_DATA_WIDTH-1:0] incoming_data_buffer;
@@ -72,8 +72,8 @@ always @ (posedge clk) begin
         memory[2] <= /*outgoing_element_size*/ 16;
         memory[3] <= /*num_outgoing_elements*/ 1;
 		memory[4] <= /*incoming_element_size*/ 9;
-		memory[5] <= 3;
-		memory[6] <= 2;
+		memory[5] <= /*num_write_extra_toggles*/3;
+		memory[6] <= /*num_read_extra_toggles*/2;
 		
 		num_elements_written <= 0;
 		num_bits_read <= 0;
@@ -91,7 +91,7 @@ always @ (posedge clk) begin
 		burst <= 1'b0;
 		enable_read <= 1'b0;
 		extra_toggle_count <= 0;
-		wait_before_read <= 1'b0;
+		wait_after_read <= 1'b0;
     
         mosi <= 1'bz;
         sclk <= /*CPOL;*/0;
@@ -179,10 +179,8 @@ always @ (posedge clk) begin
 									if(enable_read) begin
 										if(!num_write_extra_toggles)
 											sm2_state <= SM2_READ;
-										else begin
-											wait_before_read = 1'b1;
+										else
 											sm2_state <= SM2_WAIT;
-										end
 									end
 									
 									else begin
@@ -211,27 +209,32 @@ always @ (posedge clk) begin
 							if(num_bits_read == incoming_element_size - 1) begin
 								if(!num_read_extra_toggles)
 									sm2_state <= SM2_END_DATA_TRANSFER;
-								else
+								else begin
+									wait_after_read <= 1'b1;
 									sm2_state <= SM2_WAIT;
+								end
 							end
 						end
                     end
 					
 					SM2_WAIT: begin
-						if(wait_before_read) begin
-							if(extra_toggle_count == (num_write_extra_toggles - 1)) begin
-                                extra_toggle_count <= 0;
-                                wait_before_read <= 1'b0;
-                                sm2_state <= SM2_READ;
-                            end
-						end
-						
-						else begin
+						if(wait_after_read) begin
 							if(extra_toggle_count == (num_read_extra_toggles - 1)) begin
 								extra_toggle_count <= 0;
 								sm2_state <= SM2_END_DATA_TRANSFER;
 							end
-						end		
+						end
+						
+						else begin
+							if(extra_toggle_count == (num_write_extra_toggles - 1)) begin
+                                extra_toggle_count <= 0;
+                                
+                                if(enable_read)
+                                    sm2_state <= SM2_READ;
+                                else
+                                    sm2_state <= SM2_END_DATA_TRANSFER;
+                            end
+						end
 							
 						extra_toggle_count <= extra_toggle_count + 1;
 					end
