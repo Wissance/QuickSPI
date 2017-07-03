@@ -91,6 +91,7 @@ always @ (posedge clk) begin
 		burst <= 1'b0;
 		enable_read <= 1'b0;
 		extra_toggle_count <= 0;
+		wait_before_read <= 1'b0;
     
         mosi <= 1'bz;
         sclk <= /*CPOL;*/0;
@@ -219,11 +220,12 @@ always @ (posedge clk) begin
 					SM2_WAIT: begin
 						if(wait_before_read) begin
 							if(extra_toggle_count == (num_write_extra_toggles - 1)) begin
-								extra_toggle_count <= 0;
-								sm2_state <= SM2_READ;
-							end
+                                extra_toggle_count <= 0;
+                                wait_before_read <= 1'b0;
+                                sm2_state <= SM2_READ;
+                            end
 						end
-							
+						
 						else begin
 							if(extra_toggle_count == (num_read_extra_toggles - 1)) begin
 								extra_toggle_count <= 0;
