@@ -3,8 +3,6 @@
 module quick_spi #(
     parameter INCOMING_DATA_WIDTH = 8,
     parameter OUTGOING_DATA_WIDTH = 16,
-    parameter EXTRA_WRITE_SCLK_TOGGLES = 6,
-    parameter EXTRA_READ_SCLK_TOGGLES = 4,
     parameter NUMBER_OF_SLAVES = 2)
 (
     input wire clk,
@@ -165,31 +163,15 @@ always @ (posedge clk) begin
 								
 								if(burst) begin
 									if(num_elements_written == num_outgoing_elements - 1) begin
-										if(!num_write_extra_toggles)
-											sm2_state <= SM2_END_DATA_TRANSFER;
-										else
-											sm2_state <= SM2_WAIT;
+										sm2_state <= SM2_WAIT;
 									end
 									
 									else
 										num_bits_written <= 0;
 								end
 								
-								else begin
-									if(enable_read) begin
-										if(!num_write_extra_toggles)
-											sm2_state <= SM2_READ;
-										else
-											sm2_state <= SM2_WAIT;
-									end
-									
-									else begin
-										if(!num_write_extra_toggles)
-											sm2_state <= SM2_END_DATA_TRANSFER;
-										else
-											sm2_state <= SM2_WAIT;
-									end
-								end
+								else
+									sm2_state <= SM2_WAIT;
 							end
 						end
                     end
@@ -207,12 +189,8 @@ always @ (posedge clk) begin
 							num_bits_read <= num_bits_read + 1;
 							
 							if(num_bits_read == incoming_element_size - 1) begin
-								if(!num_read_extra_toggles)
-									sm2_state <= SM2_END_DATA_TRANSFER;
-								else begin
-									wait_after_read <= 1'b1;
-									sm2_state <= SM2_WAIT;
-								end
+								wait_after_read <= 1'b1;
+								sm2_state <= SM2_WAIT;
 							end
 						end
                     end
