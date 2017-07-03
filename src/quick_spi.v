@@ -121,11 +121,15 @@ always @ (posedge clk) begin
 					
 					if(outgoing_element_size == 1) begin
 						num_elements_written <= 1;
-					
-                        if(num_outgoing_elements == 1)
-                            sm2_state <= SM2_WAIT;
-                        else
-                            sm2_state <= SM2_WRITE;
+						
+                        if(enable_read)
+                            sm2_state <= SM2_READ;
+                        else begin
+                            if(num_outgoing_elements == 1)
+                                sm2_state <= SM2_WAIT;
+                            else
+                                sm2_state <= SM2_WRITE;
+                        end
 					end
 					
 					else
