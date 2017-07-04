@@ -226,8 +226,10 @@ always @ (posedge clk) begin
 					end
 					
 					SM2_END_DATA_TRANSFER: begin
+                        sclk <= CPOL;
 						spi_clock_phase <= CPHA;
 						sclk_toggle_count <= 0;
+						
 						ss_n[slave] <= 1'b1;
 						mosi <= 1'bz;
 						
