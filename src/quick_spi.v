@@ -59,35 +59,32 @@ always @ (posedge clk) begin
         memory[0][0] <= 0;
         /*CPHA*/
         memory[0][1] <= 0;
-        
         /*outgoing_element_size*/
         memory[2] <= 0;
         memory[3] <= 8;
-        
         /*num_outgoing_elements*/
         memory[4] <= 0;
         memory[5] <= 2;
-        
         /*incoming_element_size*/
 		memory[6] <= 0;
 		memory[7] <= 9;
-		
 		/*num_write_extra_toggles*/
 		memory[8] <= 0;
 		memory[9] <= 3 + 4;
-		
 		/*num_read_extra_toggles*/
 		memory[10] <= 0;
 		memory[11] <= 0;
-		
+		/*write_buffer*/
         memory[12] <= 8'b00011010;
         memory[13] <= 8'b01101010;
 		
 		num_elements_written <= 0;
 		num_bits_read <= 0;
         num_bits_written <= 0;
+        
 		incoming_byte_bit <= 0;
 		outgoing_byte_bit <= 0;
+		
 		num_bytes_read <= 0;
 		num_bytes_written <= 0;
 		
@@ -95,10 +92,11 @@ always @ (posedge clk) begin
 		enable_read <= 1'b0;
 		extra_toggle_count <= 0;
 		wait_after_read <= 1'b0;
-    
+		
         mosi <= 1'bz;
         sclk <= 0;
         ss_n <= {NUMBER_OF_SLAVES{1'b1}};
+        
         sclk_toggle_count <= 0;
         spi_clock_phase <= 0;
         
@@ -110,8 +108,8 @@ always @ (posedge clk) begin
         case(sm1_state)
             SM1_IDLE: begin
 				if(start_transaction) begin
-                    sclk <= memory[0][0]; /*CPOL*/
-                    spi_clock_phase <= memory[0][1]; /*CPHA*/
+                    sclk <= CPOL;
+                    spi_clock_phase <= CPHA;
                     
 					sm1_state <= SM1_SELECT_SLAVE;
 				end
