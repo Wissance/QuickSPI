@@ -104,7 +104,6 @@ always @ (posedge clk) begin
         mosi <= 1'bz;
         sclk <= 0;
         ss_n <= {NUMBER_OF_SLAVES{1'b1}};
-        
         sclk_toggle_count <= 0;
         spi_clock_phase <= 0;
         
