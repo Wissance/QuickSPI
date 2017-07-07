@@ -60,8 +60,8 @@ always @ (posedge clk) begin
     if(!reset_n) begin
         memory[0] <= /*CPOL*/ 0;
         memory[1] <= /*CPHA*/ 0;
-        memory[2] <= /*outgoing_element_size*/ 16;
-        memory[3] <= /*num_outgoing_elements*/ 1;
+        memory[2] <= /*outgoing_element_size*/ 8;
+        memory[3] <= /*num_outgoing_elements*/ 2;
 		memory[4] <= /*incoming_element_size*/ 9;
 		memory[5] <= /*num_write_extra_toggles*/3 + 4;
 		memory[6] <= /*num_read_extra_toggles*/0;
@@ -79,8 +79,8 @@ always @ (posedge clk) begin
 		read_buffer_start <= 30;
 		write_buffer_start <= 7;
 		
-		burst <= 1'b0;
-		enable_read <= 1'b1;
+		burst <= 1'b1;
+		enable_read <= 1'b0;
 		extra_toggle_count <= 0;
 		wait_after_read <= 1'b0;
     
@@ -236,8 +236,12 @@ always @ (posedge clk) begin
 						num_bits_read <= 0;
 						num_bits_written <= 0;
 						
-						if(num_elements_written == num_outgoing_elements)
+						if(num_elements_written == num_outgoing_elements) begin
+                            num_elements_written <= 0;
+                            num_bytes_written <= 0;
 							sm1_state <= SM1_IDLE;
+                        end
+						
 						else
 							sm1_state <= SM1_SELECT_SLAVE;
 					end
