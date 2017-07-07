@@ -26,7 +26,6 @@ end
 always @ (posedge clk) begin
     if(!rst_n) begin
         outgoing_data <= {8'b00011010, 8'b01101010};
-        start_transaction <= 1'b1;
         operation <= 1'b0;
 		miso <= 1'b0;
 		sclk_toggle_count <= 0;
@@ -35,32 +34,21 @@ always @ (posedge clk) begin
     end
     
     else begin
-        if(end_of_transaction) begin
-            operation <= ~operation;
-            sclk_toggle_count <= 0;
-            spi_clock_phase <= 1'b1;
-            incoming_data_buffer <= {8'b10010101, 1'b1};
-			miso <= 1'b0;
+        if(sclk_toggle_count > 36 && operation == 1'b0) begin
+            if(!spi_clock_phase) begin
+                miso <= incoming_data_buffer[0];
+                incoming_data_buffer <= incoming_data_buffer >> 1;
+            end
         end
         
-        else begin
-            if(sclk_toggle_count > 36 && operation == 1'b0) begin
-                if(!spi_clock_phase) begin
-                    miso <= incoming_data_buffer[0];
-                    incoming_data_buffer <= incoming_data_buffer >> 1;
-                end
-            end
-            
-            sclk_toggle_count <= sclk_toggle_count + 1;
-            spi_clock_phase <= ~spi_clock_phase;
-        end
+        sclk_toggle_count <= sclk_toggle_count + 1;
+        spi_clock_phase <= ~spi_clock_phase;
     end
 end
 
 quick_spi spi(
     .clk(clk),
     .reset_n(rst_n),
-    .start_transaction(start_transaction),
     .slave(2'b01),
     .mosi(mosi),
     .miso(miso),

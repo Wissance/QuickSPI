@@ -4,7 +4,6 @@ module quick_spi #(parameter NUMBER_OF_SLAVES = 2)
 (
     input wire clk,
     input wire reset_n,
-    input wire start_transaction,
     input wire[NUMBER_OF_SLAVES-1:0] slave,
     output reg mosi,
     input wire miso,
@@ -52,8 +51,6 @@ reg[15:0] num_bytes_written;
 localparam read_buffer_start = 30;
 localparam write_buffer_start = 12;
 
-reg burst;
-reg enable_read;
 reg[15:0] extra_toggle_count;
 
 always @ (posedge clk) begin
@@ -67,7 +64,7 @@ always @ (posedge clk) begin
         /* burst */
         memory[0][3] <= 1'b1;
         /* enable_read */
-        memory[0][3] <= 1'b0;
+        memory[0][4] <= 1'b0;
          
         /*outgoing_element_size*/
         memory[2] <= 0;
