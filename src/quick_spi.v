@@ -31,6 +31,7 @@ reg[7:0] memory [0: 255];
 
 wire CPOL = memory[0][0];
 wire CPHA = memory[0][1];
+wire start = memory[0][2];
 
 wire[15:0] outgoing_element_size = {memory[2], memory[3]};
 wire[15:0] num_outgoing_elements = {memory[4], memory[5]};
@@ -56,9 +57,11 @@ reg[15:0] extra_toggle_count;
 always @ (posedge clk) begin
     if(!reset_n) begin
         /*CPOL*/
-        memory[0][0] <= 0;
+        memory[0][0] <= 1'b0;
         /*CPHA*/
-        memory[0][1] <= 0;
+        memory[0][1] <= 1'b0;
+        /* start */
+        memory[0][2] <= 1'b1;
         /*outgoing_element_size*/
         memory[2] <= 0;
         memory[3] <= 8;
@@ -107,7 +110,7 @@ always @ (posedge clk) begin
     else begin
         case(sm1_state)
             SM1_IDLE: begin
-				if(start_transaction) begin
+				if(start) begin
                     sclk <= CPOL;
                     spi_clock_phase <= CPHA;
                     
@@ -240,7 +243,6 @@ always @ (posedge clk) begin
                         sclk <= CPOL;
 						spi_clock_phase <= CPHA;
 						sclk_toggle_count <= 0;
-						
 						ss_n[slave] <= 1'b1;
 						mosi <= 1'bz;
 						
@@ -248,6 +250,9 @@ always @ (posedge clk) begin
 						num_bits_written <= 0;
 						
 						if(num_elements_written == num_outgoing_elements) begin
+                            /* start */
+                            memory[0][2] <= 1'b0;
+						
                             num_elements_written <= 0;
                             num_bytes_written <= 0;
 							sm1_state <= SM1_IDLE;
