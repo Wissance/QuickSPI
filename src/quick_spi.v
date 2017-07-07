@@ -32,6 +32,8 @@ reg[7:0] memory [0: 255];
 wire CPOL = memory[0][0];
 wire CPHA = memory[0][1];
 wire start = memory[0][2];
+wire burst = memory[0][3];
+wire enable_read = memory[0][4];
 
 wire[15:0] outgoing_element_size = {memory[2], memory[3]};
 wire[15:0] num_outgoing_elements = {memory[4], memory[5]};
@@ -62,6 +64,11 @@ always @ (posedge clk) begin
         memory[0][1] <= 1'b0;
         /* start */
         memory[0][2] <= 1'b1;
+        /* burst */
+        memory[0][3] <= 1'b1;
+        /* enable_read */
+        memory[0][3] <= 1'b0;
+         
         /*outgoing_element_size*/
         memory[2] <= 0;
         memory[3] <= 8;
@@ -91,8 +98,6 @@ always @ (posedge clk) begin
 		num_bytes_read <= 0;
 		num_bytes_written <= 0;
 		
-		burst <= 1'b1;
-		enable_read <= 1'b0;
 		extra_toggle_count <= 0;
 		wait_after_read <= 1'b0;
 		
