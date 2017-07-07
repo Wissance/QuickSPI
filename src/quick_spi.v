@@ -11,7 +11,7 @@ module quick_spi #(parameter NUMBER_OF_SLAVES = 2)
     output reg sclk,
     output reg[NUMBER_OF_SLAVES-1:0] ss_n);
 
-reg[31:0] sclk_toggle_count;
+reg[15:0] sclk_toggle_count;
 reg spi_clock_phase;
 
 localparam SM1_IDLE = 2'b00;
@@ -26,58 +26,70 @@ localparam SM2_END_DATA_TRANSFER = 2'b11;
 reg[1:0] sm2_state;
 
 reg wait_after_read;
-reg [7:0] num_toggles_to_wait;
+reg[15:0] num_toggles_to_wait;
 reg[7:0] memory [0: 255];
 
-wire[7:0] CPOL = memory[0];
-wire[7:0] CPHA = memory[1];
+wire CPOL = memory[0][0];
+wire CPHA = memory[0][1];
 
-wire[7:0] outgoing_element_size = memory[2];
-wire[7:0] num_outgoing_elements = memory[3];
-wire[7:0] incoming_element_size = memory[4];
+wire[15:0] outgoing_element_size = {memory[2], memory[3]};
+wire[15:0] num_outgoing_elements = {memory[4], memory[5]};
+wire[15:0] incoming_element_size = {memory[6], memory[7]};
+wire[15:0] num_write_extra_toggles = {memory[8], memory[9]};
+wire[15:0] num_read_extra_toggles = {memory[10], memory[11]};
 
-wire[7:0] num_write_extra_toggles = memory[5];
-wire[7:0] num_read_extra_toggles = memory[6];
-
-reg[7:0] num_bits_read;
-reg[7:0] num_bits_written;
-reg[7:0] num_elements_written;
-
+reg[15:0] num_bits_read;
+reg[15:0] num_bits_written;
+reg[15:0] num_elements_written;
 reg[3:0] incoming_byte_bit;
 reg[3:0] outgoing_byte_bit;
+reg[15:0] num_bytes_read;
+reg[15:0] num_bytes_written;
 
-reg[7:0] num_bytes_read;
-reg[7:0] num_bytes_written;
-
-reg[7:0] read_buffer_start;
-reg[7:0] write_buffer_start;
+localparam read_buffer_start = 30;
+localparam write_buffer_start = 12;
 
 reg burst;
 reg enable_read;
-reg[31:0] extra_toggle_count;
+reg[15:0] extra_toggle_count;
 
 always @ (posedge clk) begin
     if(!reset_n) begin
-        memory[0] <= /*CPOL*/ 0;
-        memory[1] <= /*CPHA*/ 0;
-        memory[2] <= /*outgoing_element_size*/ 8;
-        memory[3] <= /*num_outgoing_elements*/ 2;
-		memory[4] <= /*incoming_element_size*/ 9;
-		memory[5] <= /*num_write_extra_toggles*/3 + 4;
-		memory[6] <= /*num_read_extra_toggles*/0;
+        /*CPOL*/
+        memory[0][0] <= 0;
+        /*CPHA*/
+        memory[0][1] <= 0;
+        
+        /*outgoing_element_size*/
+        memory[2] <= 0;
+        memory[3] <= 8;
+        
+        /*num_outgoing_elements*/
+        memory[4] <= 0;
+        memory[5] <= 2;
+        
+        /*incoming_element_size*/
+		memory[6] <= 0;
+		memory[7] <= 9;
+		
+		/*num_write_extra_toggles*/
+		memory[8] <= 0;
+		memory[9] <= 3 + 4;
+		
+		/*num_read_extra_toggles*/
+		memory[10] <= 0;
+		memory[11] <= 0;
+		
+        memory[12] <= 8'b00011010;
+        memory[13] <= 8'b01101010;
 		
 		num_elements_written <= 0;
 		num_bits_read <= 0;
         num_bits_written <= 0;
-		
 		incoming_byte_bit <= 0;
 		outgoing_byte_bit <= 0;
-		
 		num_bytes_read <= 0;
 		num_bytes_written <= 0;
-		
-		read_buffer_start <= 30;
-		write_buffer_start <= 7;
 		
 		burst <= 1'b1;
 		enable_read <= 1'b0;
@@ -85,22 +97,23 @@ always @ (posedge clk) begin
 		wait_after_read <= 1'b0;
     
         mosi <= 1'bz;
-        sclk <= /*CPOL;*/0;
+        sclk <= 0;
         ss_n <= {NUMBER_OF_SLAVES{1'b1}};
         sclk_toggle_count <= 0;
-        spi_clock_phase <= /*CPHA;*/0;
+        spi_clock_phase <= 0;
+        
         sm1_state <= SM1_IDLE;
+        sm2_state <= SM2_WRITE;
     end
     
     else begin
         case(sm1_state)
             SM1_IDLE: begin
 				if(start_transaction) begin
-                    memory[7] <= 8'b00011010;
-                    memory[8] <= 8'b01101010;
-				
+                    sclk <= memory[0][0]; /*CPOL*/
+                    spi_clock_phase <= memory[0][1]; /*CPHA*/
+                    
 					sm1_state <= SM1_SELECT_SLAVE;
-					sm2_state <= SM2_WRITE;
 				end
             end
             
