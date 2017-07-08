@@ -1,6 +1,8 @@
 #ifndef SRC_QUICKSPI_H_
 #define SRC_QUICKSPI_H_
 
+const size_t MEMORY_SIZE = 256;
+
 class QuickSPI
 {
 public:
@@ -61,7 +63,7 @@ private:
 	unsigned short numReadExtraToggles;
 	unsigned short numWriteExtraToggles;
 
-	unsigned char* memory;
+	unsigned char memory[MEMORY_SIZE];
 };
 
 inline unsigned char QuickSPI::getCPOL() const
