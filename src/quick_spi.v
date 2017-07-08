@@ -4,7 +4,6 @@ module quick_spi #(parameter NUMBER_OF_SLAVES = 2)
 (
     input wire clk,
     input wire reset_n,
-    input wire[NUMBER_OF_SLAVES-1:0] slave,
     output reg mosi,
     input wire miso,
     output reg sclk,
@@ -32,6 +31,7 @@ wire CPOL = memory[0][0];
 wire CPHA = memory[0][1];
 wire start = memory[0][2];
 wire burst = memory[0][3];
+wire slave = memory[1];
 wire enable_read = memory[0][4];
 
 wire[15:0] outgoing_element_size = {memory[2], memory[3]};
@@ -65,7 +65,8 @@ always @ (posedge clk) begin
         memory[0][3] <= 1'b1;
         /* enable_read */
         memory[0][4] <= 1'b0;
-         
+        /* slave */
+        memory[1] <= 2'b01;
         /*outgoing_element_size*/
         memory[2] <= 0;
         memory[3] <= 8;

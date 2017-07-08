@@ -49,7 +49,6 @@ end
 quick_spi spi(
     .clk(clk),
     .reset_n(rst_n),
-    .slave(2'b01),
     .mosi(mosi),
     .miso(miso),
     .sclk(sclk),
