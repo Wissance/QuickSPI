@@ -1,6 +1,8 @@
 #ifndef SRC_QUICKSPI_H_
 #define SRC_QUICKSPI_H_
 
+#include <cmath>
+
 const size_t MEMORY_SIZE = 256;
 const size_t CONTROL_SIZE = 12; /* WRITE_BUFFER_START */
 

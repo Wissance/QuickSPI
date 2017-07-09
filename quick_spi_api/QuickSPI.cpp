@@ -1,6 +1,5 @@
 #include "QuickSPI.h"
 #include <memory>
-#include <cmath>
 
 QuickSPI::QuickSPI():
 	CPOL(0),
