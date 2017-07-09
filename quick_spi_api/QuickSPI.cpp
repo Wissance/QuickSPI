@@ -1,5 +1,6 @@
 #include "QuickSPI.h"
 #include <memory>
+#include <cmath>
 
 QuickSPI::QuickSPI():
 	CPOL(0),
@@ -43,9 +44,12 @@ void QuickSPI::write()
 	void* address;
 	updateControl();
 
+	const size_t lvControlSize = getControlSize();
 	/* Copying control and write buffer. */
-	if(numAppendedBytes)
-		memcpy(address, memory, getControlSize() + numAppendedBytes);
+	if (numAppendedBytes)
+		memcpy(address, memory, lvControlSize + numAppendedBytes);
+	else
+		memcpy(address, memory, lvControlSize + computeNumOutgoingBytes());
 }
 
 /*

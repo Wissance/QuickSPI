@@ -56,6 +56,7 @@ public:
 	unsigned short getNumWriteExtraToggles() const;
 	void setNumWriteExtraToggles(unsigned short pmNumWriteExtraToggles);
 
+	size_t computeNumOutgoingBytes() const;
 	void appendUnsignedChar(unsigned char value);
 	void appendUnsignedShort(unsigned short value);
 	void appendUnsignedInt(unsigned int value);
@@ -237,6 +238,11 @@ inline unsigned short QuickSPI::getNumWriteExtraToggles() const
 inline void QuickSPI::setNumWriteExtraToggles(unsigned short pmNumWriteExtraToggles)
 {
 	numWriteExtraToggles = pmNumWriteExtraToggles;
+}
+
+inline size_t QuickSPI::computeNumOutgoingBytes() const
+{
+	return static_cast<size_t>(ceil((getOutgoingElementSize() * getNumOutgoingElements()) / 8));
 }
 
 inline void QuickSPI::appendUnsignedChar(unsigned char value)
