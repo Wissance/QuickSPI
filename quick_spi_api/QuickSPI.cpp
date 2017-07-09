@@ -44,7 +44,8 @@ void QuickSPI::write()
 	updateControl();
 
 	/* Copying control and write buffer. */
-	memcpy(address, memory, getControlSize() + getBufferSize());
+	if(numAppendedBytes)
+		memcpy(address, memory, getControlSize() + numAppendedBytes);
 }
 
 /*
