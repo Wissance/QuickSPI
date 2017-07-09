@@ -60,4 +60,13 @@ Example 1:
 	spi.setNumOutgoingElements(1);
 	*reinterpret_cast<unsigned int*>(spi.getWriteBuffer()) = 0xffffffff;
 	spi.write();
+
+Example 2:
+
+	QuickSPI spi;
+	spi.setSlave(0);
+	spi.appendUnsignedChar(1);
+	spi.appendUnsignedChar(2);
+	spi.appendUnsignedChar(3);
+	spi.write();
 */
