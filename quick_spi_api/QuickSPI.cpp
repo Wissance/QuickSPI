@@ -19,13 +19,15 @@ QuickSPI::~QuickSPI(){}
 
 void QuickSPI::updateControl()
 {
-	CPOL ? memory[0] |= 0x1 : memory[0] &= 0xfe;
-	CPHA ? memory[0] |= 0x2 : memory[0] &= 0xfd;
+	unsigned char& firstByte = memory[0];
 
-	memory[0] |= 0x4; /* start */
+	CPOL ? firstByte |= 0x1 : firstByte &= 0xfe;
+	CPHA ? firstByte |= 0x2 : firstByte &= 0xfd;
 
-	burst ? memory[0] |= 0x8 : memory[0] &= 0xf7;
-	read ? memory[0] |= 0x10: memory[0] &= 0xef;
+	firstByte |= 0x4; /* start */
+
+	burst ? firstByte |= 0x8 : firstByte &= 0xf7;
+	read ? firstByte |= 0x10: firstByte &= 0xef;
 
 	memory[1] = slave;
 	*reinterpret_cast<unsigned short*>(&memory[2]) = outgoingElementSize;
@@ -45,9 +47,12 @@ void QuickSPI::write()
 }
 
 /*
+Example 1:
+
 	QuickSPI spi;
 	spi.setSlave(0);
-	spi.setOutgoingElementSize(8);
-	spi.setNumOutgoingElements(4);
+	spi.setOutgoingElementSize(32);
+	spi.setNumOutgoingElements(1);
+	*reinterpret_cast<unsigned int*>(spi.getWriteBuffer()) = 0xffffffff;
 	spi.write();
 */
