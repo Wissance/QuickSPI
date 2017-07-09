@@ -2,12 +2,26 @@
 #define SRC_QUICKSPI_H_
 
 const size_t MEMORY_SIZE = 256;
+const size_t CONTROL_SIZE = 12; /* WRITE_BUFFER_START */
 
 class QuickSPI
 {
 public:
 	QuickSPI();
 	~QuickSPI();
+
+	size_t getControlSize() const;
+	size_t getBufferSize() const;
+
+	size_t getWriteBufferStart() const;
+	size_t getWriteBufferEnd() const;
+
+	size_t getReadBufferStart() const;
+	size_t getReadBufferEnd() const;
+
+	unsigned char* getMemory();
+	unsigned char* getWriteBuffer();
+	unsigned char* getReadBuffer();
 
 	unsigned char getCPOL() const;
 	void setCPOL(unsigned char pmCPOL);
@@ -65,6 +79,51 @@ private:
 
 	unsigned char memory[MEMORY_SIZE];
 };
+
+inline size_t QuickSPI::getControlSize() const
+{
+	return CONTROL_SIZE;
+}
+
+inline size_t QuickSPI::getBufferSize() const
+{
+	return (MEMORY_SIZE - getWriteBufferStart()) / 2;
+}
+
+inline size_t QuickSPI::getWriteBufferStart() const
+{
+	return getControlSize();
+}
+
+inline size_t QuickSPI::getWriteBufferEnd() const
+{
+	return getWriteBufferStart() + (getBufferSize() - 1);
+}
+
+inline size_t QuickSPI::getReadBufferStart() const
+{
+	return getWriteBufferStart() + getBufferSize();
+}
+
+inline size_t QuickSPI::getReadBufferEnd() const
+{
+	return getReadBufferStart() + (getBufferSize() - 1);
+}
+
+inline unsigned char* QuickSPI::getMemory()
+{
+	return memory;
+}
+
+inline unsigned char* QuickSPI::getWriteBuffer()
+{
+	return &memory[getWriteBufferStart()];
+}
+
+inline unsigned char* QuickSPI::getReadBuffer()
+{
+	return &memory[getReadBufferStart()];
+}
 
 inline unsigned char QuickSPI::getCPOL() const
 {

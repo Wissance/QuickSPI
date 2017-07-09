@@ -1,15 +1,6 @@
 #include "QuickSPI.h"
 #include <memory>
 
-namespace
-{
-	const size_t WRITE_BUFFER_START = 12;
-	const size_t BUFFER_SIZE = (MEMORY_SIZE - WRITE_BUFFER_START) / 2;
-	const size_t WRITE_BUFFER_END = WRITE_BUFFER_START + (BUFFER_SIZE - 1);
-	const size_t READ_BUFFER_START = WRITE_BUFFER_START + BUFFER_SIZE;
-	const size_t READ_BUFFER_END = READ_BUFFER_START + (BUFFER_SIZE - 1);
-}
-
 QuickSPI::QuickSPI():
 	CPOL(0),
 	CPHA(0),
@@ -50,5 +41,13 @@ void QuickSPI::write()
 	updateControl();
 
 	/* Copying control and write buffer. */
-	memcpy(address, memory, WRITE_BUFFER_START + BUFFER_SIZE);
+	memcpy(address, memory, getControlSize() + getWriteBufferStart() + getBufferSize());
 }
+
+/*
+	QuickSPI spi;
+	spi.setSlave(0);
+	spi.setOutgoingElementSize(8);
+	spi.setNumOutgoingElements(4);
+	spi.write();
+*/
