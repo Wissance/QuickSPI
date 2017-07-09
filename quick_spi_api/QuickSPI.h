@@ -56,6 +56,9 @@ public:
 	unsigned short getNumWriteExtraToggles() const;
 	void setNumWriteExtraToggles(unsigned short pmNumWriteExtraToggles);
 
+	void appendUnsignedChar(unsigned char value);
+	void appendUnsignedShort(unsigned short value);
+	void appendUnsignedInt(unsigned int value);
 	void write();
 
 private:
@@ -78,6 +81,7 @@ private:
 	unsigned short numWriteExtraToggles;
 
 	unsigned char memory[MEMORY_SIZE];
+	size_t numAppendedBytes;
 };
 
 inline size_t QuickSPI::getControlSize() const
@@ -233,6 +237,24 @@ inline unsigned short QuickSPI::getNumWriteExtraToggles() const
 inline void QuickSPI::setNumWriteExtraToggles(unsigned short pmNumWriteExtraToggles)
 {
 	numWriteExtraToggles = pmNumWriteExtraToggles;
+}
+
+inline void QuickSPI::appendUnsignedChar(unsigned char value)
+{
+	*reinterpret_cast<unsigned char*>(getWriteBuffer()[numAppendedBytes]) = value;
+	++numAppendedBytes;
+}
+
+inline void QuickSPI::appendUnsignedShort(unsigned short value)
+{
+	*reinterpret_cast<unsigned short*>(getWriteBuffer()[numAppendedBytes]) = value;
+	numAppendedBytes += 2;
+}
+
+inline void QuickSPI::appendUnsignedInt(unsigned int value)
+{
+	*reinterpret_cast<unsigned int*>(getWriteBuffer()[numAppendedBytes]) = value;
+	numAppendedBytes += 4;
 }
 
 #endif /* SRC_QUICKSPI_H_ */

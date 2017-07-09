@@ -13,7 +13,8 @@ QuickSPI::QuickSPI():
 	numOutgoingElements(0),
 	numReadExtraToggles(0),
 	numWriteExtraToggles(0),
-	memory{} {}
+	memory{},
+	numAppendedBytes(0){}
 
 QuickSPI::~QuickSPI(){}
 
