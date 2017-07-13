@@ -1,5 +1,5 @@
 #include "QuickSPI.h"
-#include <memory>
+#include <cstring>
 
 QuickSPI::QuickSPI():
 	CPOL(0),
@@ -13,8 +13,11 @@ QuickSPI::QuickSPI():
 	numOutgoingElements(0),
 	numReadExtraToggles(0),
 	numWriteExtraToggles(0),
-	memory{},
-	numAppendedBytes(0){}
+	/*memory{},*/
+	numAppendedBytes(0)
+	{
+		memset(memory,0,sizeof(memory));
+	}
 
 QuickSPI::~QuickSPI(){}
 
