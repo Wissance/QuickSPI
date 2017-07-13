@@ -51,7 +51,7 @@ void QuickSPI::write()
 	if (numAppendedBytes)
 		memcpy(address, memory, lvControlSize + numAppendedBytes);
 	else
-		memcpy(address, memory, lvControlSize + computeNumOutgoingBytes());
+		memcpy(address, memory, getReadBufferStart());
 }
 
 /*
