@@ -3,7 +3,7 @@
 
 #include <cmath>
 
-const size_t MEMORY_SIZE = 256;
+const size_t MEMORY_SIZE = 64;
 const size_t CONTROL_SIZE = 12; /* WRITE_BUFFER_START */
 
 class QuickSPI
