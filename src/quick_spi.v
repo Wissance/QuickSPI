@@ -145,7 +145,7 @@ wire CPOL = memory[0][0];
 wire CPHA = memory[0][1];
 wire start = memory[0][2];
 wire burst = memory[0][3];
-wire enable_read = 0;//memory[0][4];
+wire read = 0;//memory[0][4];
 wire slave = memory[1];
 
 wire[15:0] outgoing_element_size = {memory[3], memory[2]};
@@ -468,7 +468,7 @@ always @(posedge s_axi_aclk) begin
                             if(outgoing_element_size == 1) begin
                                 num_elements_written <= 1;
                                 
-                                if(enable_read)
+                                if(read)
                                     sm2_state <= SM2_READ;
                                 else begin
                                     if(num_outgoing_elements == 1) begin
@@ -570,7 +570,7 @@ always @(posedge s_axi_aclk) begin
                                     if(extra_toggle_count == (num_write_extra_toggles - 1)) begin
                                         extra_toggle_count <= 0;
                                         
-                                        if(enable_read)
+                                        if(read)
                                             sm2_state <= SM2_READ;
                                         else
                                             sm2_state <= SM2_END_DATA_TRANSFER;
