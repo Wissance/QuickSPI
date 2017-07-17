@@ -380,18 +380,12 @@ assign memory_address =
 wire memory_write_enable = axi_wready && s_axi_wvalid;
 wire memory_read_enable = axi_arv_arr_flag; //& ~axi_rvalid
 
-integer num_initial_axi_transfer_bytes_received_wstrb_0;
-integer num_initial_axi_transfer_bytes_received_wstrb_1;
-integer num_initial_axi_transfer_bytes_received_wstrb_2;
-integer num_initial_axi_transfer_bytes_received_wstrb_3;
+integer num_initial_axi_transfer_bytes_received;
 integer i;
 
 always @(posedge s_axi_aclk) begin
     if (s_axi_aresetn == 1'b0) begin
-        num_initial_axi_transfer_bytes_received_wstrb_0 <= 0;
-        num_initial_axi_transfer_bytes_received_wstrb_1 <= 0;
-        num_initial_axi_transfer_bytes_received_wstrb_2 <= 0;
-        num_initial_axi_transfer_bytes_received_wstrb_3 <= 0;
+        num_initial_axi_transfer_bytes_received <= 0;
         
         for (i = 0; i < MEMORY_SIZE - 1; i = i + 1)
             memory[i] <= 0;
@@ -423,30 +417,27 @@ always @(posedge s_axi_aclk) begin
         if(memory_write_enable) begin
             if (s_axi_wstrb[0]) begin
                 memory[(memory_address*4) + 0] <= s_axi_wdata[(0*8+7) -: 8];
-                num_initial_axi_transfer_bytes_received_wstrb_0 <= num_initial_axi_transfer_bytes_received_wstrb_0 + 1;
+                num_initial_axi_transfer_bytes_received <= num_initial_axi_transfer_bytes_received + 1;
             end
                 
             if (s_axi_wstrb[1]) begin
                 memory[(memory_address*4) + 1] <= s_axi_wdata[(1*8+7) -: 8];
-                num_initial_axi_transfer_bytes_received_wstrb_1 <= num_initial_axi_transfer_bytes_received_wstrb_1 + 1;
+                num_initial_axi_transfer_bytes_received <= num_initial_axi_transfer_bytes_received + 2;
             end
                 
             if (s_axi_wstrb[2]) begin
                 memory[(memory_address*4) + 2] <= s_axi_wdata[(2*8+7) -: 8];
-                num_initial_axi_transfer_bytes_received_wstrb_2 <= num_initial_axi_transfer_bytes_received_wstrb_2 + 1;
+                num_initial_axi_transfer_bytes_received <= num_initial_axi_transfer_bytes_received + 3;
             end
                 
             if (s_axi_wstrb[3]) begin
                 memory[(memory_address*4) + 3] <= s_axi_wdata[(3*8+7) -: 8];
-                num_initial_axi_transfer_bytes_received_wstrb_3 <= num_initial_axi_transfer_bytes_received_wstrb_3 + 1;
+                num_initial_axi_transfer_bytes_received <= num_initial_axi_transfer_bytes_received + 4;
             end
         end
         
         else begin
-            if((num_initial_axi_transfer_bytes_received_wstrb_0 +
-                num_initial_axi_transfer_bytes_received_wstrb_1 +
-                num_initial_axi_transfer_bytes_received_wstrb_2 +
-                num_initial_axi_transfer_bytes_received_wstrb_3) == num_initial_axi_transfer_bytes) begin
+            if(num_initial_axi_transfer_bytes_received == num_initial_axi_transfer_bytes) begin
                 case(sm1_state)
                     SM1_IDLE: begin
                         if(start) begin
@@ -589,10 +580,8 @@ always @(posedge s_axi_aclk) begin
                                 num_bits_written <= 0;
                                 
                                 if(num_elements_written == num_outgoing_elements) begin
-                                    num_initial_axi_transfer_bytes_received_wstrb_0 <= 0;
-                                    num_initial_axi_transfer_bytes_received_wstrb_1 <= 0;
-                                    num_initial_axi_transfer_bytes_received_wstrb_2 <= 0;
-                                    num_initial_axi_transfer_bytes_received_wstrb_3 <= 0;
+                                    num_initial_axi_transfer_bytes_received <= 0;
+                                    
                                     /* start */
                                     memory[0][2] <= 1'b0;
                                 
