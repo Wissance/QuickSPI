@@ -1,6 +1,8 @@
 #include "QuickSPI.h"
 #include <cstring>
 
+#define QUICK_SPI_BASE_ADDRESS 0x43C30000
+
 QuickSPI::QuickSPI():
 	CPOL(0),
 	CPHA(0),
@@ -13,11 +15,8 @@ QuickSPI::QuickSPI():
 	numOutgoingElements(0),
 	numReadExtraToggles(0),
 	numWriteExtraToggles(0),
-	/*memory{},*/
-	numAppendedBytes(0)
-	{
-		memset(memory,0,sizeof(memory));
-	}
+	memory{},
+	numAppendedBytes(0){}
 
 QuickSPI::~QuickSPI(){}
 
@@ -34,6 +33,7 @@ void QuickSPI::updateControl()
 	read ? firstByte |= 0x10: firstByte &= 0xef;
 
 	memory[1] = slave;
+
 	*reinterpret_cast<unsigned short*>(&memory[2]) = outgoingElementSize;
 	*reinterpret_cast<unsigned short*>(&memory[4]) = numOutgoingElements;
 	*reinterpret_cast<unsigned short*>(&memory[6]) = incomingElementSize;
@@ -43,15 +43,12 @@ void QuickSPI::updateControl()
 
 void QuickSPI::write()
 {
-	void* address;
+	int* address = reinterpret_cast<int*>(QUICK_SPI_BASE_ADDRESS);
 	updateControl();
+	memcpy(address, memory, getReadBufferStart());
 
-	const size_t lvControlSize = getControlSize();
-	/* Copying control and write buffer. */
-	if (numAppendedBytes)
-		memcpy(address, memory, lvControlSize + numAppendedBytes);
-	else
-		memcpy(address, memory, getReadBufferStart());
+	numAppendedBytes = 0;
+	numReadBytes = 0;
 }
 
 /*
@@ -68,6 +65,8 @@ Example 2:
 
 	QuickSPI spi;
 	spi.setSlave(0);
+	spi.setOutgoingElementSize(32);
+	spi.setNumOutgoingElements(1);
 	spi.appendUnsignedChar(1);
 	spi.appendUnsignedChar(2);
 	spi.appendUnsignedChar(3);

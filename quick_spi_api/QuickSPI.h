@@ -64,6 +64,9 @@ public:
 	void appendUnsignedInt(unsigned int value);
 	void write();
 
+	unsigned char readUnsignedChar();
+	unsigned short readUnsignedShort();
+	unsigned int readUnsignedInt();
 private:
 	void updateControl();
 
@@ -85,6 +88,7 @@ private:
 
 	unsigned char memory[MEMORY_SIZE];
 	size_t numAppendedBytes;
+	size_t numReadBytes;
 };
 
 inline size_t QuickSPI::getControlSize() const
@@ -249,20 +253,44 @@ inline size_t QuickSPI::computeNumOutgoingBytes() const
 
 inline void QuickSPI::appendUnsignedChar(unsigned char value)
 {
-	*reinterpret_cast<unsigned char*>(getWriteBuffer()[numAppendedBytes]) = value;
+	*reinterpret_cast<unsigned char*>(getWriteBuffer() + numAppendedBytes) = value;
 	++numAppendedBytes;
 }
 
 inline void QuickSPI::appendUnsignedShort(unsigned short value)
 {
-	*reinterpret_cast<unsigned short*>(getWriteBuffer()[numAppendedBytes]) = value;
+	*reinterpret_cast<unsigned short*>(getWriteBuffer() + numAppendedBytes) = value;
 	numAppendedBytes += 2;
 }
 
 inline void QuickSPI::appendUnsignedInt(unsigned int value)
 {
-	*reinterpret_cast<unsigned int*>(getWriteBuffer()[numAppendedBytes]) = value;
+	*reinterpret_cast<unsigned int*>(getWriteBuffer()+ numAppendedBytes) = value;
 	numAppendedBytes += 4;
+}
+
+inline unsigned char QuickSPI::readUnsignedChar()
+{
+	const unsigned char lvUnsignedChar = *(getReadBuffer() + numReadBytes);
+	++numReadBytes;
+
+	return lvUnsignedChar;
+}
+
+inline unsigned short QuickSPI::readUnsignedShort()
+{
+	const unsigned short lvUnsignedShort = *reinterpret_cast<unsigned short*>(getReadBuffer() + numReadBytes);
+	numReadBytes += 2;
+
+	return lvUnsignedShort;
+}
+
+inline unsigned int QuickSPI::readUnsignedInt()
+{
+	const unsigned int lvUnsignedInt = *reinterpret_cast<unsigned int*>(getReadBuffer() + numReadBytes);
+	numReadBytes += 4;
+
+	return lvUnsignedInt;
 }
 
 #endif /* SRC_QUICKSPI_H_ */
