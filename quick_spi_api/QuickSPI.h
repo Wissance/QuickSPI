@@ -2,6 +2,7 @@
 #define SRC_QUICKSPI_H_
 
 #include <cmath>
+#include "xscugic.h"
 
 const size_t MEMORY_SIZE = 64;
 const size_t CONTROL_SIZE = 12; /* WRITE_BUFFER_START */
@@ -11,6 +12,8 @@ class QuickSPI
 public:
 	QuickSPI();
 	~QuickSPI();
+
+	void setInterruptHandler(void(*handler)(void*));
 
 	size_t getControlSize() const;
 	size_t getBufferSize() const;
@@ -91,6 +94,9 @@ private:
 
 	size_t numWrittenBits;
 	size_t numReadBits;
+
+	XScuGic_Config* GICconfig;
+	XScuGic interruptController;
 };
 
 inline size_t QuickSPI::getControlSize() const

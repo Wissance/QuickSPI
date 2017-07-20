@@ -1,7 +1,14 @@
 #include "QuickSPI.h"
 #include <cstring>
 
+#include "xil_io.h"
+#include "xil_exception.h"
+#include "xparameters.h"
+#include "xil_cache.h"
+
 #define QUICK_SPI_BASE_ADDRESS 0x43C30000
+#define INTERRUPT_CONTROLLER_DEVICE_ID XPAR_SCUGIC_SINGLE_DEVICE_ID
+#define QUICK_SPI_INTERRUPT_ID XPAR_FABRIC_QUICK_SPI_0_INTERRUPT_INTR
 
 QuickSPI::QuickSPI():
 	CPOL(0),
@@ -20,6 +27,27 @@ QuickSPI::QuickSPI():
 	numReadBits(0){}
 
 QuickSPI::~QuickSPI(){}
+
+void QuickSPI::setInterruptHandler(void(*interruptHandler)(void*))
+{
+	GICconfig = XScuGic_LookupConfig(INTERRUPT_CONTROLLER_DEVICE_ID);
+	XScuGic_CfgInitialize(&interruptController, GICconfig, GICconfig->CpuBaseAddress);
+    XScuGic_SetPriorityTriggerType(&interruptController, QUICK_SPI_INTERRUPT_ID, 0xA0, 0x3);
+    XScuGic_Connect(
+    		&interruptController,
+			QUICK_SPI_INTERRUPT_ID,
+			(Xil_InterruptHandler)interruptHandler,
+			this);
+
+	/*XScuGic_SelfTest(&interruptController);*/
+    Xil_ExceptionRegisterHandler(
+    		XIL_EXCEPTION_ID_IRQ_INT,
+			(Xil_ExceptionHandler)XScuGic_InterruptHandler,
+			&interruptController);
+
+	Xil_ExceptionEnable();
+	XScuGic_Enable(&interruptController, QUICK_SPI_INTERRUPT_ID);
+}
 
 void QuickSPI::copyBits(size_t numBits, const void* source, void* destination, size_t sourceStartBit, size_t destinationStartBit)
 {

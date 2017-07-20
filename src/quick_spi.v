@@ -65,7 +65,8 @@ module quick_spi #
     output reg mosi,
     input wire miso,
     output reg sclk,
-    output reg[NUMBER_OF_SLAVES-1:0] ss_n
+    output reg[NUMBER_OF_SLAVES-1:0] ss_n,
+    output reg interrupt
 );
 
 reg [C_S_AXI_ADDR_WIDTH-1:0] axi_awaddr;
@@ -405,6 +406,8 @@ always @(posedge s_axi_aclk) begin
         sclk_toggle_count <= 0;
         spi_clock_phase <= 0;
         
+        interrupt <= 1'b0;
+        
         sm1_state <= SM1_IDLE;
         sm2_state <= SM2_WRITE;
     end
@@ -439,6 +442,7 @@ always @(posedge s_axi_aclk) begin
                         if(start) begin
                             sclk <= CPOL;
                             spi_clock_phase <= CPHA;
+                            interrupt <= 1'b0;
                             
                             sm1_state <= SM1_SELECT_SLAVE;
                         end
@@ -580,6 +584,7 @@ always @(posedge s_axi_aclk) begin
                                     
                                     /* start */
                                     memory[0][2] <= 1'b0;
+                                    interrupt <= 1'b1;
                                 
                                     num_elements_written <= 0;
                                     num_bytes_written <= 0;
