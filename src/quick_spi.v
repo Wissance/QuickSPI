@@ -484,7 +484,7 @@ always @(posedge s_axi_aclk) begin
                         
                         case(sm2_state)
                             SM2_WRITE: begin
-                                if(!spi_clock_phase) begin
+                                if(spi_clock_phase) begin
                                     outgoing_byte_bit <= outgoing_byte_bit + 1;
                                     
                                     if(outgoing_byte_bit == 7) begin
@@ -521,7 +521,7 @@ always @(posedge s_axi_aclk) begin
                             end
                             
                             SM2_READ: begin
-                                if(spi_clock_phase) begin
+                                if(!spi_clock_phase) begin
                                     incoming_byte_bit <= incoming_byte_bit + 1;
                                 
                                     if(incoming_byte_bit == 7) begin

@@ -67,8 +67,7 @@ public:
 	void writeBits(size_t numBits, const void* buffer, size_t startBit);
 
 	size_t computeNumOutgoingBytes() const;
-	void write();
-
+	void startTransaction();
 private:
 	void updateControl();
 

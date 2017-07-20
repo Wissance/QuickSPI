@@ -101,7 +101,7 @@ void QuickSPI::updateControl()
 	*reinterpret_cast<unsigned short*>(&memory[10]) = numReadExtraToggles;
 }
 
-void QuickSPI::write()
+void QuickSPI::startTransaction()
 {
 	int* address = reinterpret_cast<int*>(QUICK_SPI_BASE_ADDRESS);
 	updateControl();
@@ -111,24 +111,3 @@ void QuickSPI::write()
 	numReadBits = 0;
 }
 
-/*
-Example 1:
-
-	QuickSPI spi;
-	spi.setSlave(0);
-	spi.setOutgoingElementSize(32);
-	spi.setNumOutgoingElements(1);
-	*reinterpret_cast<unsigned int*>(spi.getWriteBuffer()) = 0xffffffff;
-	spi.write();
-
-Example 2:
-
-	QuickSPI spi;
-	spi.setSlave(0);
-	spi.setOutgoingElementSize(32);
-	spi.setNumOutgoingElements(1);
-	spi.appendUnsignedChar(1);
-	spi.appendUnsignedChar(2);
-	spi.appendUnsignedChar(3);
-	spi.write();
-*/
