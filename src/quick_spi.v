@@ -10,7 +10,7 @@ module quick_spi #
     parameter integer C_S_AXI_WUSER_WIDTH = 0,
     parameter integer C_S_AXI_RUSER_WIDTH = 0,
     parameter integer C_S_AXI_BUSER_WIDTH = 0,
-/********************************************************/
+    
     parameter integer MEMORY_SIZE = 64,
     parameter integer NUMBER_OF_SLAVES = 2
 )
@@ -61,7 +61,7 @@ module quick_spi #
     output wire [C_S_AXI_RUSER_WIDTH-1:0] s_axi_ruser,
     output wire s_axi_rvalid,
     input wire s_axi_rready,
-/********************************************************/
+
     output reg mosi,
     input wire miso,
     output reg sclk,
@@ -121,8 +121,6 @@ assign aw_wrap_en = ((axi_awaddr & aw_wrap_size) == aw_wrap_size)? 1'b1: 1'b0;
 assign ar_wrap_en = ((axi_araddr & ar_wrap_size) == ar_wrap_size)? 1'b1: 1'b0;
 assign s_axi_buser = 0;
 
-/*****************************************************************************************/
-
 reg[15:0] sclk_toggle_count;
 reg spi_clock_phase;
 
@@ -139,13 +137,13 @@ reg[1:0] sm2_state;
 
 reg wait_after_read;
 reg[15:0] num_toggles_to_wait;
-reg [8-1:0] memory [0:MEMORY_SIZE-1];
+reg [7:0] memory [0:MEMORY_SIZE-1];
 
 wire CPOL = memory[0][0];
 wire CPHA = memory[0][1];
 wire start = memory[0][2];
 wire burst = memory[0][3];
-wire read = 0;//memory[0][4];
+wire read = memory[0][4];
 wire slave = memory[1];
 
 wire[15:0] outgoing_element_size = {memory[3], memory[2]};
@@ -167,8 +165,6 @@ localparam read_buffer_start = 38; /* (MEMORY_SIZE - write_buffer_start) / 2; */
 localparam num_initial_axi_transfer_bytes = read_buffer_start;
 
 reg[15:0] extra_toggle_count;
-
-/*****************************************************************************************/
 
 always @(posedge s_axi_aclk) begin
     if (s_axi_aresetn == 1'b0) begin
