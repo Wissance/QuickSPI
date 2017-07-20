@@ -58,15 +58,17 @@ public:
 	unsigned short getNumWriteExtraToggles() const;
 	void setNumWriteExtraToggles(unsigned short pmNumWriteExtraToggles);
 
+	static size_t computeNumBytesIncludingBitRemainder(size_t numBits);
+	static size_t computeNumBytesExcludingBitRemainder(size_t numBits);
+	static size_t computeBitRemainder(size_t numBits);
+
+	static void copyBits(size_t numBits, const void* source, void* destination, size_t sourceStartBit, size_t destinationStartBit);
+	void readBits(size_t numBits, void* buffer, size_t startBit);
+	void writeBits(size_t numBits, const void* buffer, size_t startBit);
+
 	size_t computeNumOutgoingBytes() const;
-	void appendUnsignedChar(unsigned char value);
-	void appendUnsignedShort(unsigned short value);
-	void appendUnsignedInt(unsigned int value);
 	void write();
 
-	unsigned char readUnsignedChar();
-	unsigned short readUnsignedShort();
-	unsigned int readUnsignedInt();
 private:
 	void updateControl();
 
@@ -87,8 +89,9 @@ private:
 	unsigned short numWriteExtraToggles;
 
 	unsigned char memory[MEMORY_SIZE];
-	size_t numAppendedBytes;
-	size_t numReadBytes;
+
+	size_t numWrittenBits;
+	size_t numReadBits;
 };
 
 inline size_t QuickSPI::getControlSize() const
@@ -246,51 +249,24 @@ inline void QuickSPI::setNumWriteExtraToggles(unsigned short pmNumWriteExtraTogg
 	numWriteExtraToggles = pmNumWriteExtraToggles;
 }
 
+inline size_t QuickSPI::computeNumBytesIncludingBitRemainder(size_t numBits)
+{
+	return static_cast<size_t>(ceil(static_cast<double>(numBits) / 8.0));
+}
+
+inline size_t QuickSPI::computeNumBytesExcludingBitRemainder(size_t numBits)
+{
+	return static_cast<size_t>(floor(static_cast<double>(numBits) / 8.0));
+}
+
+inline size_t QuickSPI::computeBitRemainder(size_t numBits)
+{
+	return numBits - (computeNumBytesExcludingBitRemainder(numBits) * 8);
+}
+
 inline size_t QuickSPI::computeNumOutgoingBytes() const
 {
-	return static_cast<size_t>(ceil((getOutgoingElementSize() * getNumOutgoingElements()) / 8));
-}
-
-inline void QuickSPI::appendUnsignedChar(unsigned char value)
-{
-	*reinterpret_cast<unsigned char*>(getWriteBuffer() + numAppendedBytes) = value;
-	++numAppendedBytes;
-}
-
-inline void QuickSPI::appendUnsignedShort(unsigned short value)
-{
-	*reinterpret_cast<unsigned short*>(getWriteBuffer() + numAppendedBytes) = value;
-	numAppendedBytes += 2;
-}
-
-inline void QuickSPI::appendUnsignedInt(unsigned int value)
-{
-	*reinterpret_cast<unsigned int*>(getWriteBuffer()+ numAppendedBytes) = value;
-	numAppendedBytes += 4;
-}
-
-inline unsigned char QuickSPI::readUnsignedChar()
-{
-	const unsigned char lvUnsignedChar = *(getReadBuffer() + numReadBytes);
-	++numReadBytes;
-
-	return lvUnsignedChar;
-}
-
-inline unsigned short QuickSPI::readUnsignedShort()
-{
-	const unsigned short lvUnsignedShort = *reinterpret_cast<unsigned short*>(getReadBuffer() + numReadBytes);
-	numReadBytes += 2;
-
-	return lvUnsignedShort;
-}
-
-inline unsigned int QuickSPI::readUnsignedInt()
-{
-	const unsigned int lvUnsignedInt = *reinterpret_cast<unsigned int*>(getReadBuffer() + numReadBytes);
-	numReadBytes += 4;
-
-	return lvUnsignedInt;
+	return computeNumBytesIncludingBitRemainder(getOutgoingElementSize() * getNumOutgoingElements());
 }
 
 #endif /* SRC_QUICKSPI_H_ */

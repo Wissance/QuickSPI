@@ -16,9 +16,69 @@ QuickSPI::QuickSPI():
 	numReadExtraToggles(0),
 	numWriteExtraToggles(0),
 	memory{},
-	numAppendedBytes(0){}
+	numWrittenBits(0),
+	numReadBits(0){}
 
 QuickSPI::~QuickSPI(){}
+
+void QuickSPI::copyBits(size_t numBits, const void* source, void* destination, size_t sourceStartBit, size_t destinationStartBit)
+{
+	unsigned char* currentWriteByte = static_cast<unsigned char*>(destination);
+	const unsigned char* currentReadByte = static_cast<const unsigned char*>(source);
+
+	size_t currentReadBit = sourceStartBit;
+	size_t currentWriteBit = computeBitRemainder(destinationStartBit);
+
+	for (size_t i = 0; i < numBits; ++i)
+	{
+		if (currentReadBit == 8)
+		{
+			currentReadBit = 0;
+			++currentReadByte;
+		}
+
+		if (currentWriteBit == 8)
+		{
+			currentWriteBit = 0;
+			++currentWriteByte;
+		}
+
+		const unsigned char readMask = 1 << currentReadBit;
+		const unsigned char writeMask = 1 << currentWriteBit;
+
+		if (*currentReadByte & readMask)
+			*currentWriteByte |= writeMask;
+		else
+			*currentWriteByte &= ~writeMask;
+
+		++currentReadBit;
+		++currentWriteBit;
+	}
+}
+
+void QuickSPI::readBits(size_t numBits, void* buffer, size_t startBit)
+{
+	copyBits(
+			numBits,
+			getReadBuffer() + computeNumBytesIncludingBitRemainder(numReadBits),
+			buffer,
+			startBit,
+			computeBitRemainder(numReadBits));
+
+	numReadBits += numBits;
+}
+
+void QuickSPI::writeBits(size_t numBits, const void* buffer, size_t startBit)
+{
+	copyBits(
+			numBits,
+			buffer,
+			getWriteBuffer() + computeNumBytesIncludingBitRemainder(numWrittenBits),
+			startBit,
+			computeBitRemainder(numWrittenBits));
+
+	numWrittenBits += numBits;
+}
 
 void QuickSPI::updateControl()
 {
@@ -47,8 +107,8 @@ void QuickSPI::write()
 	updateControl();
 	memcpy(address, memory, getReadBufferStart());
 
-	numAppendedBytes = 0;
-	numReadBytes = 0;
+	numWrittenBits = 0;
+	numReadBits = 0;
 }
 
 /*
