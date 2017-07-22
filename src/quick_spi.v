@@ -459,20 +459,26 @@ always @(posedge s_axi_aclk) begin
 								
 								if(outgoing_element_size == 1) begin
 									num_elements_written <= 1;
-									
-									if(read)
-										sm2_state <= SM2_READ;
-									else begin
-										if(num_outgoing_elements == 1) begin
-											if(!num_write_extra_toggles)
-												sm2_state <= SM2_END_DATA_TRANSFER;
+																		
+									if(num_outgoing_elements == 1) begin
+										if(!num_write_extra_toggles) begin
+											if(read)
+												sm2_state <= SM2_READ;
 											else
-												sm2_state <= SM2_WAIT;
+												sm2_state <= SM2_END_DATA_TRANSFER;
 										end
 										
 										else
+											sm2_state <= SM2_WAIT;
+									end
+									
+									else begin
+										if(read)
+											sm2_state <= SM2_READ;
+										else
 											sm2_state <= SM2_WRITE;
 									end
+
 								end
 								
 								else
@@ -517,7 +523,10 @@ always @(posedge s_axi_aclk) begin
 											
 											else begin
 												if(!num_write_extra_toggles)
-													sm2_state <= SM2_END_DATA_TRANSFER;
+													if(read)
+														sm2_state <= SM2_READ;
+													else
+														sm2_state <= SM2_END_DATA_TRANSFER;
 												else
 													sm2_state <= SM2_WAIT;
 											end
@@ -538,12 +547,17 @@ always @(posedge s_axi_aclk) begin
 										num_bits_read <= num_bits_read + 1;
 										
 										if(num_bits_read == incoming_element_size - 1) begin
-											wait_after_read <= 1'b1;
+											if(!num_read_extra_toggles) begin
+												if(read)
+													sm2_state <= SM2_READ;
+												else
+													sm2_state <= SM2_END_DATA_TRANSFER;
+											end
 											
-											if(!num_read_extra_toggles)
-												sm2_state <= SM2_END_DATA_TRANSFER;
-											else
+											else begin
+												wait_after_read <= 1'b1;
 												sm2_state <= SM2_WAIT;
+											end
 										end
 									end
 								end

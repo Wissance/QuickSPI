@@ -83,19 +83,17 @@ void QuickSPI::copyBits(size_t numBits, const void* source, void* destination, s
 
 void QuickSPI::readBits(size_t numBits, void* buffer, size_t startBit)
 {
-	size_t byteOffset = computeNumBytesIncludingBitRemainder(numBits);
-	if (byteOffset)
-		--byteOffset;
+	size_t byteOffset = computeNumBytesIncludingBitRemainder(numReadBits);
+	const size_t bitRemainder = computeBitRemainder(numReadBits);
 
-	size_t sourceBitRemainder = computeBitRemainder(numReadBits);
-	if (sourceBitRemainder)
-		--sourceBitRemainder;
+	if (bitRemainder)
+		--byteOffset;
 
 	copyBits(
 			numBits,
 			getReadBuffer() + byteOffset,
 			buffer,
-			sourceBitRemainder,
+			bitRemainder,
 			startBit);
 
 	numReadBits += numBits;
@@ -103,20 +101,18 @@ void QuickSPI::readBits(size_t numBits, void* buffer, size_t startBit)
 
 void QuickSPI::writeBits(size_t numBits, const void* buffer, size_t startBit)
 {
-	size_t byteOffset = computeNumBytesIncludingBitRemainder(numBits);
-	if (byteOffset)
-		--byteOffset;
+	size_t byteOffset = computeNumBytesIncludingBitRemainder(numWrittenBits);
+	const size_t bitRemainder = computeBitRemainder(numWrittenBits);
 
-	size_t destinationBitRemainder = computeBitRemainder(numWrittenBits);
-	if (destinationBitRemainder)
-		--destinationBitRemainder;
+	if (bitRemainder)
+		--byteOffset;
 
 	copyBits(
 			numBits,
 			buffer,
 			getWriteBuffer() + byteOffset,
 			startBit,
-			destinationBitRemainder);
+			bitRemainder);
 
 	numWrittenBits += numBits;
 }
@@ -203,9 +199,7 @@ void QuickSPI::updateControl()
 void QuickSPI::startTransaction()
 {
 	updateControl();
-
-	u32* address = reinterpret_cast<u32*>(QUICK_SPI_BASE_ADDRESS);
-	memcpy(address, memory, getReadBufferStart());
+	memcpy(reinterpret_cast<u32*>(QUICK_SPI_BASE_ADDRESS), memory, getReadBufferStart());
 
 	numWrittenBits = 0;
 	numReadBits = 0;
