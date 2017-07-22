@@ -48,61 +48,133 @@ void QuickSPI::setInterruptHandler(void(*interruptHandler)(void*))
 
 void QuickSPI::copyBits(size_t numBits, const void* source, void* destination, size_t sourceStartBit, size_t destinationStartBit)
 {
-	unsigned char* currentWriteByte = static_cast<unsigned char*>(destination);
-	const unsigned char* currentReadByte = static_cast<const unsigned char*>(source);
+	unsigned char* currentDestinationByte = static_cast<unsigned char*>(destination);
+	const unsigned char* currentSourceByte = static_cast<const unsigned char*>(source);
 
-	size_t currentReadBit = sourceStartBit;
-	size_t currentWriteBit = computeBitRemainder(destinationStartBit);
+	size_t currentSourceBit = sourceStartBit;
+	size_t currentDestinationBit = destinationStartBit;
 
 	for (size_t i = 0; i < numBits; ++i)
 	{
-		if (currentReadBit == 8)
+		if (currentSourceBit == 8)
 		{
-			currentReadBit = 0;
-			++currentReadByte;
+			currentSourceBit = 0;
+			++currentSourceByte;
 		}
 
-		if (currentWriteBit == 8)
+		if (currentDestinationBit == 8)
 		{
-			currentWriteBit = 0;
-			++currentWriteByte;
+			currentDestinationBit = 0;
+			++currentDestinationByte;
 		}
 
-		const unsigned char readMask = 1 << currentReadBit;
-		const unsigned char writeMask = 1 << currentWriteBit;
+		const unsigned char sourceMask = 1 << currentSourceBit;
+		const unsigned char destinationMask = 1 << currentDestinationBit;
 
-		if (*currentReadByte & readMask)
-			*currentWriteByte |= writeMask;
+		if (*currentSourceByte & sourceMask)
+			*currentDestinationByte |= destinationMask;
 		else
-			*currentWriteByte &= ~writeMask;
+			*currentDestinationByte &= ~destinationMask;
 
-		++currentReadBit;
-		++currentWriteBit;
+		++currentSourceBit;
+		++currentDestinationBit;
 	}
 }
 
 void QuickSPI::readBits(size_t numBits, void* buffer, size_t startBit)
 {
+	size_t byteOffset = computeNumBytesIncludingBitRemainder(numBits);
+	if (byteOffset)
+		--byteOffset;
+
+	size_t sourceBitRemainder = computeBitRemainder(numReadBits);
+	if (sourceBitRemainder)
+		--sourceBitRemainder;
+
 	copyBits(
 			numBits,
-			getReadBuffer() + computeNumBytesIncludingBitRemainder(numReadBits),
+			getReadBuffer() + byteOffset,
 			buffer,
-			startBit,
-			computeBitRemainder(numReadBits));
+			sourceBitRemainder,
+			startBit);
 
 	numReadBits += numBits;
 }
 
 void QuickSPI::writeBits(size_t numBits, const void* buffer, size_t startBit)
 {
+	size_t byteOffset = computeNumBytesIncludingBitRemainder(numBits);
+	if (byteOffset)
+		--byteOffset;
+
+	size_t destinationBitRemainder = computeBitRemainder(numWrittenBits);
+	if (destinationBitRemainder)
+		--destinationBitRemainder;
+
 	copyBits(
 			numBits,
 			buffer,
-			getWriteBuffer() + computeNumBytesIncludingBitRemainder(numWrittenBits),
+			getWriteBuffer() + byteOffset,
 			startBit,
-			computeBitRemainder(numWrittenBits));
+			destinationBitRemainder);
 
 	numWrittenBits += numBits;
+}
+
+void QuickSPI::reverseByteOrder(size_t numBytes, const void* source, void* destination)
+{
+	const unsigned char* currentSourceByte = static_cast<const unsigned char*>(source);
+	unsigned char* currentDestinationByte = static_cast<unsigned char*>(destination);
+
+	for(size_t d = 0, s = numBytes - 1; d < numBytes; ++d, --s)
+		currentDestinationByte[d] = currentSourceByte[s];
+}
+
+void QuickSPI::reverseBitOrder(size_t numBits, const void* source, void* destination, size_t sourceStartBit, size_t destinationStartBit)
+{
+	size_t byteOffset = computeNumBytesIncludingBitRemainder(numBits + sourceStartBit);
+	if (byteOffset)
+		--byteOffset;
+
+	const unsigned char* currentSourceByte = static_cast<const unsigned char*>(source) + byteOffset;
+	unsigned char* currentDestinationByte = static_cast<unsigned char*>(destination);
+
+	size_t sourceBitRemainder = computeBitRemainder(numBits + sourceStartBit);
+	if (sourceBitRemainder)
+		--sourceBitRemainder;
+
+	size_t currentSourceBit = sourceBitRemainder;
+	if (!currentSourceBit)
+		currentSourceBit = 7;
+
+	size_t currentDestinationBit = destinationStartBit;
+
+	for (size_t i = 0; i < numBits; ++i)
+	{
+		const unsigned char sourceMask = 1 << currentSourceBit;
+		const unsigned char destinationMask = 1 << currentDestinationBit;
+
+		if (*currentSourceByte & sourceMask)
+			*currentDestinationByte |= destinationMask;
+		else
+			*currentDestinationByte &= ~destinationMask;
+
+		if (currentSourceBit == 0)
+		{
+			currentSourceBit = 7;
+			--currentSourceByte;
+		}
+		else
+			--currentSourceBit;
+
+		if (currentDestinationBit == 7)
+		{
+			currentDestinationBit = 0;
+			++currentDestinationByte;
+		}
+		else
+			++currentDestinationBit;
+	}
 }
 
 void QuickSPI::updateControl()
@@ -130,9 +202,9 @@ void QuickSPI::updateControl()
 
 void QuickSPI::startTransaction()
 {
-	u32* address = reinterpret_cast<u32*>(QUICK_SPI_BASE_ADDRESS);
 	updateControl();
 
+	u32* address = reinterpret_cast<u32*>(QUICK_SPI_BASE_ADDRESS);
 	memcpy(address, memory, getReadBufferStart());
 
 	numWrittenBits = 0;

@@ -72,6 +72,9 @@ public:
 	void readBits(size_t numBits, void* buffer, size_t startBit);
 	void writeBits(size_t numBits, const void* buffer, size_t startBit);
 
+	static void reverseByteOrder(size_t numBytes, const void* source, void* destination);
+	static void reverseBitOrder(size_t numBits, const void* source, void* destination, size_t sourceStartBit, size_t destinationStartBit);
+
 	size_t computeNumOutgoingBytes() const;
 	void startTransaction();
 private:
