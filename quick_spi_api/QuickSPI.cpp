@@ -12,7 +12,7 @@ QuickSPI::QuickSPI():
 	burst(false),
 	read(false),
 	slave(0),
-	clockDivider(1),
+	clockDivider(0),
 	incomingElementSize(0),
 	outgoingElementSize(0),
 	numIncomingElements(0),
