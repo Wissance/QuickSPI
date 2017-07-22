@@ -5,7 +5,7 @@
 #include "xscugic.h"
 
 const size_t MEMORY_SIZE = 64;
-const size_t CONTROL_SIZE = 12; /* WRITE_BUFFER_START */
+const size_t CONTROL_SIZE = 14; /* WRITE_BUFFER_START */
 
 class QuickSPI
 {
@@ -43,6 +43,9 @@ public:
 	unsigned char getSlave() const;
 	void setSlave(unsigned char pmSlave);
 
+	unsigned char getClockDivider() const;
+	void setClockDivider(unsigned char pmClockDivider);
+
 	unsigned short getIncomingElementSize() const;
 	void setIncomingElementSize(unsigned short pmIncomingElementSize);
 
@@ -79,7 +82,9 @@ private:
 
 	bool burst;
 	bool read;
+
 	unsigned char slave;
+	unsigned char clockDivider;
 
 	unsigned short incomingElementSize;
 	unsigned short outgoingElementSize;
@@ -192,6 +197,16 @@ inline unsigned char QuickSPI::getSlave() const
 inline void QuickSPI::setSlave(unsigned char pmSlave)
 {
 	slave = pmSlave;
+}
+
+inline unsigned char QuickSPI::getClockDivider() const
+{
+	return clockDivider;
+}
+
+inline void QuickSPI::setClockDivider(unsigned char pmClockDivider)
+{
+	clockDivider = pmClockDivider;
 }
 
 inline unsigned short QuickSPI::getIncomingElementSize() const

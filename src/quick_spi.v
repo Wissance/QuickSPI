@@ -145,13 +145,15 @@ wire CPHA = memory[0][1];
 wire start = memory[0][2];
 wire burst = memory[0][3];
 wire read = memory[0][4];
-wire slave = memory[1];
 
-wire[15:0] outgoing_element_size = {memory[3], memory[2]};
-wire[15:0] num_outgoing_elements = {memory[5], memory[4]};
-wire[15:0] incoming_element_size = {memory[7], memory[6]};
-wire[15:0] num_write_extra_toggles = {memory[9], memory[8]};
-wire[15:0] num_read_extra_toggles = {memory[11], memory[10]};
+wire[7:0] slave = memory[1];
+wire[7:0] clock_divider = memory[2];
+
+wire[15:0] outgoing_element_size = {memory[5], memory[4]};
+wire[15:0] num_outgoing_elements = {memory[7], memory[6]};
+wire[15:0] incoming_element_size = {memory[9], memory[8]};
+wire[15:0] num_write_extra_toggles = {memory[11], memory[10]};
+wire[15:0] num_read_extra_toggles = {memory[13], memory[12]};
 
 reg[15:0] num_bits_read;
 reg[15:0] num_bits_written;
@@ -161,8 +163,8 @@ reg[3:0] outgoing_byte_bit;
 reg[15:0] num_bytes_read;
 reg[15:0] num_bytes_written;
 
-localparam write_buffer_start = 12;
-localparam read_buffer_start = 38; /* (MEMORY_SIZE - write_buffer_start) / 2; */
+localparam write_buffer_start = 14;
+localparam read_buffer_start = 39; /* (MEMORY_SIZE - write_buffer_start) / 2; */
 localparam num_initial_axi_transfer_bytes = read_buffer_start;
 
 reg[15:0] extra_toggle_count;
@@ -379,9 +381,11 @@ wire memory_read_enable = axi_arv_arr_flag; //& ~axi_rvalid
 
 integer num_initial_axi_transfer_bytes_received;
 integer i;
+integer clock_count;
 
 always @(posedge s_axi_aclk) begin
     if (s_axi_aresetn == 1'b0) begin
+		clock_count <= 0;
         num_initial_axi_transfer_bytes_received <= 0;
         
         for (i = 0; i < MEMORY_SIZE - 1; i = i + 1)
@@ -414,189 +418,190 @@ always @(posedge s_axi_aclk) begin
 
     else begin
         if(memory_write_enable) begin
-            if (s_axi_wstrb[0]) begin
+            if (s_axi_wstrb[0])
                 memory[(memory_address*4) + 0] <= s_axi_wdata[(0*8+7) -: 8];
-                num_initial_axi_transfer_bytes_received <= num_initial_axi_transfer_bytes_received + 1;
-            end
                 
-            if (s_axi_wstrb[1]) begin
+            if (s_axi_wstrb[1])
                 memory[(memory_address*4) + 1] <= s_axi_wdata[(1*8+7) -: 8];
-                num_initial_axi_transfer_bytes_received <= num_initial_axi_transfer_bytes_received + 2;
-            end
                 
-            if (s_axi_wstrb[2]) begin
+            if (s_axi_wstrb[2])
                 memory[(memory_address*4) + 2] <= s_axi_wdata[(2*8+7) -: 8];
-                num_initial_axi_transfer_bytes_received <= num_initial_axi_transfer_bytes_received + 3;
-            end
                 
-            if (s_axi_wstrb[3]) begin
+            if (s_axi_wstrb[3])
                 memory[(memory_address*4) + 3] <= s_axi_wdata[(3*8+7) -: 8];
-                num_initial_axi_transfer_bytes_received <= num_initial_axi_transfer_bytes_received + 4;
-            end
+            
+            num_initial_axi_transfer_bytes_received <=
+                num_initial_axi_transfer_bytes_received + s_axi_wstrb[0] + s_axi_wstrb[1] + s_axi_wstrb[2] + s_axi_wstrb[3];
         end
         
         else begin
-            if(num_initial_axi_transfer_bytes_received == num_initial_axi_transfer_bytes) begin
-                case(sm1_state)
-                    SM1_IDLE: begin
-                        if(start) begin
-                            sclk <= CPOL;
-                            spi_clock_phase <= CPHA;
-                            interrupt <= 1'b0;
-                            
-                            sm1_state <= SM1_SELECT_SLAVE;
-                        end
-                    end
-                    
-                    SM1_SELECT_SLAVE: begin
-                        ss_n[slave] <= 1'b0;
-                        
-                        if(!CPHA) begin
-                            outgoing_byte_bit <= outgoing_byte_bit + 1;
-                            mosi <= memory[write_buffer_start + num_bytes_written][outgoing_byte_bit];
-                            num_bits_written <= num_bits_written + 1;
-                            
-                            if(outgoing_element_size == 1) begin
-                                num_elements_written <= 1;
-                                
-                                if(read)
-                                    sm2_state <= SM2_READ;
-                                else begin
-                                    if(num_outgoing_elements == 1) begin
-                                        if(!num_write_extra_toggles)
-                                            sm2_state <= SM2_END_DATA_TRANSFER;
-                                        else
-                                            sm2_state <= SM2_WAIT;
-                                    end
-                                    
-                                    else
-                                        sm2_state <= SM2_WRITE;
-                                end
-                            end
-                            
-                            else
-                                sm2_state <= SM2_WRITE;
-                        end
-                        
-                        sm1_state <= SM1_TRANSFER_DATA;
-                    end
-                    
-                    SM1_TRANSFER_DATA: begin
-                        sclk <= ~sclk;
-                        spi_clock_phase <= ~spi_clock_phase;
-                        sclk_toggle_count <= sclk_toggle_count + 1;
-                        
-                        case(sm2_state)
-                            SM2_WRITE: begin
-                                if(spi_clock_phase) begin
-                                    outgoing_byte_bit <= outgoing_byte_bit + 1;
-                                    
-                                    if(outgoing_byte_bit == 7) begin
-                                        num_bytes_written <= num_bytes_written + 1;
-                                        outgoing_byte_bit <= 0;
-                                    end
-                                            
-                                    mosi <= memory[write_buffer_start + num_bytes_written][outgoing_byte_bit];
-                                    num_bits_written <= num_bits_written + 1;
-                                    
-                                    if(num_bits_written == outgoing_element_size - 1) begin
-                                        num_elements_written <= num_elements_written + 1;
-                                        
-                                        if(burst) begin
-                                            if(num_elements_written == num_outgoing_elements - 1) begin
-                                                if(!num_write_extra_toggles)
-                                                    sm2_state <= SM2_END_DATA_TRANSFER;
-                                                else
-                                                    sm2_state <= SM2_WAIT;
-                                            end
-                                            
-                                            else
-                                                num_bits_written <= 0;
-                                        end
-                                        
-                                        else begin
-                                            if(!num_write_extra_toggles)
-                                                sm2_state <= SM2_END_DATA_TRANSFER;
-                                            else
-                                                sm2_state <= SM2_WAIT;
-                                        end
-                                    end
-                                end
-                            end
-                            
-                            SM2_READ: begin
-                                if(!spi_clock_phase) begin
-                                    incoming_byte_bit <= incoming_byte_bit + 1;
-                                
-                                    if(incoming_byte_bit == 7) begin
-                                        num_bytes_read <= num_bytes_read + 1;
-                                        incoming_byte_bit <= 0;
-                                    end
-                                                                
-                                    memory[read_buffer_start + num_bytes_read][incoming_byte_bit] <= miso;
-                                    num_bits_read <= num_bits_read + 1;
-                                    
-                                    if(num_bits_read == incoming_element_size - 1) begin
-                                        wait_after_read <= 1'b1;
-                                        
-                                        if(!num_read_extra_toggles)
-                                            sm2_state <= SM2_END_DATA_TRANSFER;
-                                        else
-                                            sm2_state <= SM2_WAIT;
-                                    end
-                                end
-                            end
-                            
-                            SM2_WAIT: begin
-                               extra_toggle_count <= extra_toggle_count + 1;
-                            
-                                if(wait_after_read) begin
-                                    if(extra_toggle_count == (num_read_extra_toggles - 1)) begin
-                                        extra_toggle_count <= 0;
-                                        sm2_state <= SM2_END_DATA_TRANSFER;
-                                    end
-                                end
-                                
-                                else begin
-                                    if(extra_toggle_count == (num_write_extra_toggles - 1)) begin
-                                        extra_toggle_count <= 0;
-                                        
-                                        if(read)
-                                            sm2_state <= SM2_READ;
-                                        else
-                                            sm2_state <= SM2_END_DATA_TRANSFER;
-                                    end
-                                end
-                            end
-                            
-                            SM2_END_DATA_TRANSFER: begin
-                                sclk <= CPOL;
-                                spi_clock_phase <= CPHA;
-                                sclk_toggle_count <= 0;
-                                ss_n[slave] <= 1'b1;
-                                mosi <= 1'bz;
-                                
-                                num_bits_read <= 0;
-                                num_bits_written <= 0;
-                                
-                                if(num_elements_written == num_outgoing_elements) begin
-                                    num_initial_axi_transfer_bytes_received <= 0;
-                                    
-                                    /* start */
-                                    memory[0][2] <= 1'b0;
-                                    interrupt <= 1'b1;
-                                
-                                    num_elements_written <= 0;
-                                    num_bytes_written <= 0;
-                                    sm1_state <= SM1_IDLE;
-                                end
-                                
-                                else
-                                    sm1_state <= SM1_SELECT_SLAVE;
-                            end
-                        endcase
-                    end
-                endcase
+            if(num_initial_axi_transfer_bytes_received == read_buffer_start) begin
+				if(clock_count == clock_divider) begin
+					clock_count <= 0;
+				
+					case(sm1_state)
+						SM1_IDLE: begin
+							if(start) begin
+								sclk <= CPOL;
+								spi_clock_phase <= CPHA;
+								interrupt <= 1'b0;
+								sm1_state <= SM1_SELECT_SLAVE;
+							end
+						end
+						
+						SM1_SELECT_SLAVE: begin
+							ss_n[slave] <= 1'b0;
+							
+							if(!CPHA) begin
+								outgoing_byte_bit <= outgoing_byte_bit + 1;
+								mosi <= memory[write_buffer_start + num_bytes_written][outgoing_byte_bit];
+								num_bits_written <= num_bits_written + 1;
+								
+								if(outgoing_element_size == 1) begin
+									num_elements_written <= 1;
+									
+									if(read)
+										sm2_state <= SM2_READ;
+									else begin
+										if(num_outgoing_elements == 1) begin
+											if(!num_write_extra_toggles)
+												sm2_state <= SM2_END_DATA_TRANSFER;
+											else
+												sm2_state <= SM2_WAIT;
+										end
+										
+										else
+											sm2_state <= SM2_WRITE;
+									end
+								end
+								
+								else
+									sm2_state <= SM2_WRITE;
+							end
+							
+							sm1_state <= SM1_TRANSFER_DATA;
+						end
+						
+						SM1_TRANSFER_DATA: begin
+							sclk <= ~sclk;
+							spi_clock_phase <= ~spi_clock_phase;
+							sclk_toggle_count <= sclk_toggle_count + 1;
+							
+							case(sm2_state)
+								SM2_WRITE: begin
+									if(spi_clock_phase) begin
+										outgoing_byte_bit <= outgoing_byte_bit + 1;
+										
+										if(outgoing_byte_bit == 7) begin
+											num_bytes_written <= num_bytes_written + 1;
+											outgoing_byte_bit <= 0;
+										end
+												
+										mosi <= memory[write_buffer_start + num_bytes_written][outgoing_byte_bit];
+										num_bits_written <= num_bits_written + 1;
+										
+										if(num_bits_written == outgoing_element_size - 1) begin
+											num_elements_written <= num_elements_written + 1;
+											
+											if(burst) begin
+												if(num_elements_written == num_outgoing_elements - 1) begin
+													if(!num_write_extra_toggles)
+														sm2_state <= SM2_END_DATA_TRANSFER;
+													else
+														sm2_state <= SM2_WAIT;
+												end
+												
+												else
+													num_bits_written <= 0;
+											end
+											
+											else begin
+												if(!num_write_extra_toggles)
+													sm2_state <= SM2_END_DATA_TRANSFER;
+												else
+													sm2_state <= SM2_WAIT;
+											end
+										end
+									end
+								end
+								
+								SM2_READ: begin
+									if(!spi_clock_phase) begin
+										incoming_byte_bit <= incoming_byte_bit + 1;
+									
+										if(incoming_byte_bit == 7) begin
+											num_bytes_read <= num_bytes_read + 1;
+											incoming_byte_bit <= 0;
+										end
+																	
+										memory[read_buffer_start + num_bytes_read][incoming_byte_bit] <= miso;
+										num_bits_read <= num_bits_read + 1;
+										
+										if(num_bits_read == incoming_element_size - 1) begin
+											wait_after_read <= 1'b1;
+											
+											if(!num_read_extra_toggles)
+												sm2_state <= SM2_END_DATA_TRANSFER;
+											else
+												sm2_state <= SM2_WAIT;
+										end
+									end
+								end
+								
+								SM2_WAIT: begin
+								   extra_toggle_count <= extra_toggle_count + 1;
+								
+									if(wait_after_read) begin
+										if(extra_toggle_count == (num_read_extra_toggles - 1)) begin
+											extra_toggle_count <= 0;
+											sm2_state <= SM2_END_DATA_TRANSFER;
+										end
+									end
+									
+									else begin
+										if(extra_toggle_count == (num_write_extra_toggles - 1)) begin
+											extra_toggle_count <= 0;
+											
+											if(read)
+												sm2_state <= SM2_READ;
+											else
+												sm2_state <= SM2_END_DATA_TRANSFER;
+										end
+									end
+								end
+								
+								SM2_END_DATA_TRANSFER: begin
+									sclk <= CPOL;
+									spi_clock_phase <= CPHA;
+									sclk_toggle_count <= 0;
+									ss_n[slave] <= 1'b1;
+									mosi <= 1'bz;
+									
+									num_bits_read <= 0;
+									num_bits_written <= 0;
+									
+									if(num_elements_written == num_outgoing_elements) begin
+										num_initial_axi_transfer_bytes_received <= 0;
+										
+										/* start */
+										memory[0][2] <= 1'b0;
+										interrupt <= 1'b1;
+									
+										num_elements_written <= 0;
+										num_bytes_written <= 0;
+										sm1_state <= SM1_IDLE;
+									end
+									
+									else
+										sm1_state <= SM1_SELECT_SLAVE;
+								end
+							endcase
+						end
+					endcase
+				end
+				
+				else
+					clock_count <= clock_count + 1;
             end
         end
     end

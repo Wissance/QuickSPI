@@ -1,10 +1,6 @@
 #include "QuickSPI.h"
 #include <cstring>
-
-#include "xil_io.h"
 #include "xil_exception.h"
-#include "xparameters.h"
-#include "xil_cache.h"
 
 #define QUICK_SPI_BASE_ADDRESS 0x43C30000
 #define INTERRUPT_CONTROLLER_DEVICE_ID XPAR_SCUGIC_SINGLE_DEVICE_ID
@@ -16,6 +12,7 @@ QuickSPI::QuickSPI():
 	burst(false),
 	read(false),
 	slave(0),
+	clockDivider(1),
 	incomingElementSize(0),
 	outgoingElementSize(0),
 	numIncomingElements(0),
@@ -118,21 +115,24 @@ void QuickSPI::updateControl()
 	firstByte |= 0x4; /* start */
 
 	burst ? firstByte |= 0x8 : firstByte &= 0xf7;
-	read ? firstByte |= 0x10: firstByte &= 0xef;
+	read ? firstByte |= 0x10 : firstByte &= 0xef;
 
 	memory[1] = slave;
+	memory[2] = clockDivider;
+	memory[3] = 0;
 
-	*reinterpret_cast<unsigned short*>(&memory[2]) = outgoingElementSize;
-	*reinterpret_cast<unsigned short*>(&memory[4]) = numOutgoingElements;
-	*reinterpret_cast<unsigned short*>(&memory[6]) = incomingElementSize;
-	*reinterpret_cast<unsigned short*>(&memory[8]) = numWriteExtraToggles;
-	*reinterpret_cast<unsigned short*>(&memory[10]) = numReadExtraToggles;
+	*reinterpret_cast<unsigned short*>(&memory[4]) = outgoingElementSize;
+	*reinterpret_cast<unsigned short*>(&memory[6]) = numOutgoingElements;
+	*reinterpret_cast<unsigned short*>(&memory[8]) = incomingElementSize;
+	*reinterpret_cast<unsigned short*>(&memory[10]) = numWriteExtraToggles;
+	*reinterpret_cast<unsigned short*>(&memory[12]) = numReadExtraToggles;
 }
 
 void QuickSPI::startTransaction()
 {
-	int* address = reinterpret_cast<int*>(QUICK_SPI_BASE_ADDRESS);
+	u32* address = reinterpret_cast<u32*>(QUICK_SPI_BASE_ADDRESS);
 	updateControl();
+
 	memcpy(address, memory, getReadBufferStart());
 
 	numWrittenBits = 0;
