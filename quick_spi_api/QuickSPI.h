@@ -13,7 +13,7 @@ public:
 	QuickSPI();
 	~QuickSPI();
 
-	void setInterruptHandler(void(*handler)(void*));
+	void configureInterruptController();
 
 	size_t getControlSize() const;
 	size_t getBufferSize() const;
@@ -77,7 +77,8 @@ public:
 
 	size_t computeNumOutgoingBytes() const;
 	void startTransaction();
-private:
+	void syncMemory();
+public:
 	void updateControl();
 
 	unsigned char CPOL;
@@ -98,7 +99,7 @@ private:
 	unsigned short numReadExtraToggles;
 	unsigned short numWriteExtraToggles;
 
-	unsigned char memory[MEMORY_SIZE];
+	unsigned char* memory;
 
 	size_t numWrittenBits;
 	size_t numReadBits;

@@ -6,6 +6,11 @@
 #define INTERRUPT_CONTROLLER_DEVICE_ID XPAR_SCUGIC_SINGLE_DEVICE_ID
 #define QUICK_SPI_INTERRUPT_ID XPAR_FABRIC_QUICK_SPI_0_INTERRUPT_INTR
 
+void QuickSPIInterruptHandler(void* data)
+{
+	static_cast<QuickSPI*>(data)->syncMemory();
+}
+
 QuickSPI::QuickSPI():
 	CPOL(0),
 	CPHA(0),
@@ -19,13 +24,19 @@ QuickSPI::QuickSPI():
 	numOutgoingElements(0),
 	numReadExtraToggles(0),
 	numWriteExtraToggles(0),
-	memory{},
 	numWrittenBits(0),
-	numReadBits(0){}
+	numReadBits(0)
+	{
+		memory = new unsigned char[MEMORY_SIZE]();
+		configureInterruptController();
+	}
 
-QuickSPI::~QuickSPI(){}
+QuickSPI::~QuickSPI()
+{
+	delete[] memory;
+}
 
-void QuickSPI::setInterruptHandler(void(*interruptHandler)(void*))
+void QuickSPI::configureInterruptController()
 {
 	GICconfig = XScuGic_LookupConfig(INTERRUPT_CONTROLLER_DEVICE_ID);
 	XScuGic_CfgInitialize(&interruptController, GICconfig, GICconfig->CpuBaseAddress);
@@ -33,7 +44,7 @@ void QuickSPI::setInterruptHandler(void(*interruptHandler)(void*))
     XScuGic_Connect(
     		&interruptController,
 			QUICK_SPI_INTERRUPT_ID,
-			(Xil_InterruptHandler)interruptHandler,
+			(Xil_InterruptHandler)QuickSPIInterruptHandler,
 			this);
 
 	/*XScuGic_SelfTest(&interruptController);*/
@@ -198,10 +209,18 @@ void QuickSPI::updateControl()
 
 void QuickSPI::startTransaction()
 {
+	memset(&memory[getReadBufferStart()], 0, getBufferSize());
 	updateControl();
-	memcpy(reinterpret_cast<u32*>(QUICK_SPI_BASE_ADDRESS), memory, getReadBufferStart());
+
+	memcpy(reinterpret_cast<u32*>(QUICK_SPI_BASE_ADDRESS), memory, getBufferSize() + getControlSize());
 
 	numWrittenBits = 0;
 	numReadBits = 0;
+
+	asm("WFI");
 }
 
+void QuickSPI::syncMemory()
+{
+	memcpy(memory, reinterpret_cast<unsigned char*>(QUICK_SPI_BASE_ADDRESS), MEMORY_SIZE);
+}
