@@ -355,7 +355,7 @@ wire burst = memory[0][3];
 wire read = memory[0][4];
 
 wire[7:0] slave = memory[1];
-wire[7:0] clock_divider = memory[2];
+wire[7:0] num_clocks_to_skip = memory[2];
 
 wire[15:0] outgoing_element_size = {memory[5], memory[4]};
 wire[15:0] num_outgoing_elements = {memory[7], memory[6]};
@@ -423,7 +423,7 @@ always @(posedge s_axi_aclk) begin
         
         else begin
             if(num_initial_axi_transfer_bytes_received == read_buffer_start) begin
-				if(clock_count == clock_divider) begin
+				if(clock_count == num_clocks_to_skip) begin
 					clock_count <= 0;
 				
 					case(sm1_state)

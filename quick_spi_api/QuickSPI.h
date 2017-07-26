@@ -5,7 +5,7 @@
 #include "xscugic.h"
 
 const size_t MEMORY_SIZE = 64;
-const size_t CONTROL_SIZE = 14; /* WRITE_BUFFER_START */
+const size_t CONTROL_SIZE = 14;
 
 class QuickSPI
 {
@@ -17,16 +17,14 @@ public:
 
 	size_t getControlSize() const;
 	size_t getBufferSize() const;
-
 	size_t getWriteBufferStart() const;
 	size_t getWriteBufferEnd() const;
-
 	size_t getReadBufferStart() const;
 	size_t getReadBufferEnd() const;
 
-	unsigned char* getMemory();
-	unsigned char* getWriteBuffer();
-	unsigned char* getReadBuffer();
+	void* getMemory();
+	void* getWriteBuffer();
+	void* getReadBuffer();
 
 	unsigned char getCPOL() const;
 	void setCPOL(unsigned char pmCPOL);
@@ -43,8 +41,8 @@ public:
 	unsigned char getSlave() const;
 	void setSlave(unsigned char pmSlave);
 
-	unsigned char getClockDivider() const;
-	void setClockDivider(unsigned char pmClockDivider);
+	unsigned char getDivider() const;
+	void setDivider(unsigned char pmDivider);
 
 	unsigned short getIncomingElementSize() const;
 	void setIncomingElementSize(unsigned short pmIncomingElementSize);
@@ -68,14 +66,27 @@ public:
 	static size_t computeNumBytesExcludingBitRemainder(size_t numBits);
 	static size_t computeBitRemainder(size_t numBits);
 
-	static void copyBits(size_t numBits, const void* source, void* destination, size_t sourceStartBit, size_t destinationStartBit);
+	static void copyBits(
+			size_t numBits,
+			const void* source,
+			void* destination,
+			size_t sourceStartBit,
+			size_t destinationStartBit);
+
 	void readBits(size_t numBits, void* buffer, size_t startBit);
 	void writeBits(size_t numBits, const void* buffer, size_t startBit);
 
 	static void reverseByteOrder(size_t numBytes, const void* source, void* destination);
-	static void reverseBitOrder(size_t numBits, const void* source, void* destination, size_t sourceStartBit, size_t destinationStartBit);
+	static void reverseBitOrder(
+			size_t numBits,
+			const void* source,
+			void* destination,
+			size_t sourceStartBit,
+			size_t destinationStartBit);
 
+	size_t computeNumIncomingBytes() const;
 	size_t computeNumOutgoingBytes() const;
+
 	void startTransaction();
 	void syncMemory();
 public:
@@ -83,27 +94,19 @@ public:
 
 	unsigned char CPOL;
 	unsigned char CPHA;
-
 	bool burst;
 	bool read;
-
 	unsigned char slave;
-	unsigned char clockDivider;
-
+	unsigned char numClocksToSkip;
 	unsigned short incomingElementSize;
 	unsigned short outgoingElementSize;
-
 	unsigned short numIncomingElements;
 	unsigned short numOutgoingElements;
-
 	unsigned short numReadExtraToggles;
 	unsigned short numWriteExtraToggles;
-
 	unsigned char* memory;
-
 	size_t numWrittenBits;
 	size_t numReadBits;
-
 	XScuGic_Config* GICconfig;
 	XScuGic interruptController;
 };
@@ -138,17 +141,17 @@ inline size_t QuickSPI::getReadBufferEnd() const
 	return getReadBufferStart() + (getBufferSize() - 1);
 }
 
-inline unsigned char* QuickSPI::getMemory()
+inline void* QuickSPI::getMemory()
 {
 	return memory;
 }
 
-inline unsigned char* QuickSPI::getWriteBuffer()
+inline void* QuickSPI::getWriteBuffer()
 {
 	return &memory[getWriteBufferStart()];
 }
 
-inline unsigned char* QuickSPI::getReadBuffer()
+inline void* QuickSPI::getReadBuffer()
 {
 	return &memory[getReadBufferStart()];
 }
@@ -203,14 +206,33 @@ inline void QuickSPI::setSlave(unsigned char pmSlave)
 	slave = pmSlave;
 }
 
-inline unsigned char QuickSPI::getClockDivider() const
+inline unsigned char QuickSPI::getDivider() const
 {
-	return clockDivider;
+	unsigned char lvDivider = 2;
+	unsigned char lvNumClocksToSkip = numClocksToSkip;
+
+	while(lvNumClocksToSkip)
+	{
+		lvDivider <<= 1;
+		--lvNumClocksToSkip;
+	}
+
+	return lvDivider;
 }
 
-inline void QuickSPI::setClockDivider(unsigned char pmClockDivider)
+inline void QuickSPI::setDivider(unsigned char pmDivider)
 {
-	clockDivider = pmClockDivider;
+	if(pmDivider && !(pmDivider % 2))
+	{
+		numClocksToSkip = 0;
+
+		unsigned char lvDivider = pmDivider;
+		while(lvDivider != 2)
+		{
+			lvDivider >>= 1;
+			++numClocksToSkip;
+		}
+	}
 }
 
 inline unsigned short QuickSPI::getIncomingElementSize() const
@@ -286,6 +308,11 @@ inline size_t QuickSPI::computeNumBytesExcludingBitRemainder(size_t numBits)
 inline size_t QuickSPI::computeBitRemainder(size_t numBits)
 {
 	return numBits - (computeNumBytesExcludingBitRemainder(numBits) * 8);
+}
+
+inline size_t QuickSPI::computeNumIncomingBytes() const
+{
+	return computeNumBytesIncludingBitRemainder(getIncomingElementSize() * getNumIncomingElements());
 }
 
 inline size_t QuickSPI::computeNumOutgoingBytes() const

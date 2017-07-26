@@ -17,7 +17,7 @@ QuickSPI::QuickSPI():
 	burst(false),
 	read(false),
 	slave(0),
-	clockDivider(0),
+	numClocksToSkip(0),
 	incomingElementSize(0),
 	outgoingElementSize(0),
 	numIncomingElements(0),
@@ -57,7 +57,12 @@ void QuickSPI::configureInterruptController()
 	XScuGic_Enable(&interruptController, QUICK_SPI_INTERRUPT_ID);
 }
 
-void QuickSPI::copyBits(size_t numBits, const void* source, void* destination, size_t sourceStartBit, size_t destinationStartBit)
+void QuickSPI::copyBits(
+		size_t numBits,
+		const void* source,
+		void* destination,
+		size_t sourceStartBit,
+		size_t destinationStartBit)
 {
 	unsigned char* currentDestinationByte = static_cast<unsigned char*>(destination);
 	const unsigned char* currentSourceByte = static_cast<const unsigned char*>(source);
@@ -102,7 +107,7 @@ void QuickSPI::readBits(size_t numBits, void* buffer, size_t startBit)
 
 	copyBits(
 			numBits,
-			getReadBuffer() + byteOffset,
+			static_cast<unsigned char*>(getReadBuffer()) + byteOffset,
 			buffer,
 			bitRemainder,
 			startBit);
@@ -121,7 +126,7 @@ void QuickSPI::writeBits(size_t numBits, const void* buffer, size_t startBit)
 	copyBits(
 			numBits,
 			buffer,
-			getWriteBuffer() + byteOffset,
+			static_cast<unsigned char*>(getWriteBuffer()) + byteOffset,
 			startBit,
 			bitRemainder);
 
@@ -137,7 +142,12 @@ void QuickSPI::reverseByteOrder(size_t numBytes, const void* source, void* desti
 		currentDestinationByte[d] = currentSourceByte[s];
 }
 
-void QuickSPI::reverseBitOrder(size_t numBits, const void* source, void* destination, size_t sourceStartBit, size_t destinationStartBit)
+void QuickSPI::reverseBitOrder(
+		size_t numBits,
+		const void* source,
+		void* destination,
+		size_t sourceStartBit,
+		size_t destinationStartBit)
 {
 	size_t byteOffset = computeNumBytesIncludingBitRemainder(numBits + sourceStartBit);
 	if (byteOffset)
@@ -197,7 +207,7 @@ void QuickSPI::updateControl()
 	read ? firstByte |= 0x10 : firstByte &= 0xef;
 
 	memory[1] = slave;
-	memory[2] = clockDivider;
+	memory[2] = numClocksToSkip;
 	memory[3] = 0;
 
 	*reinterpret_cast<unsigned short*>(&memory[4]) = outgoingElementSize;
