@@ -2,7 +2,6 @@
 #include <cstring>
 #include "xil_exception.h"
 
-#define QUICK_SPI_BASE_ADDRESS 0x43C30000
 #define INTERRUPT_CONTROLLER_DEVICE_ID XPAR_SCUGIC_SINGLE_DEVICE_ID
 #define QUICK_SPI_INTERRUPT_ID XPAR_FABRIC_QUICK_SPI_0_INTERRUPT_INTR
 
@@ -222,15 +221,16 @@ void QuickSPI::startTransaction()
 	memset(&memory[getReadBufferStart()], 0, getBufferSize());
 	updateControl();
 
-	memcpy(reinterpret_cast<u32*>(QUICK_SPI_BASE_ADDRESS), memory, getBufferSize() + getControlSize());
+	memcpy(QUICK_SPI_BASE_ADDRESS, memory, getBufferSize() + getControlSize());
 
 	numWrittenBits = 0;
 	numReadBits = 0;
 
+	/* while(!(memory[0] & 0x4)) */
 	asm("WFI");
 }
 
 void QuickSPI::syncMemory()
 {
-	memcpy(memory, reinterpret_cast<unsigned char*>(QUICK_SPI_BASE_ADDRESS), MEMORY_SIZE);
+	memcpy(memory, QUICK_SPI_BASE_ADDRESS, MEMORY_SIZE);
 }

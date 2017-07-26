@@ -4,6 +4,8 @@
 #include <cmath>
 #include "xscugic.h"
 
+void* const QUICK_SPI_BASE_ADDRESS =
+		reinterpret_cast<void* const>(0x43C30000);
 const size_t MEMORY_SIZE = 64;
 const size_t CONTROL_SIZE = 14;
 
