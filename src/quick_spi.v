@@ -547,13 +547,8 @@ always @(posedge s_axi_aclk) begin
 										num_bits_read <= num_bits_read + 1;
 										
 										if(num_bits_read == incoming_element_size - 1) begin
-											if(!num_read_extra_toggles) begin
-												if(read)
-													sm2_state <= SM2_READ;
-												else
-													sm2_state <= SM2_END_DATA_TRANSFER;
-											end
-											
+											if(!num_read_extra_toggles)
+                                                sm2_state <= SM2_END_DATA_TRANSFER;
 											else begin
 												wait_after_read <= 1'b1;
 												sm2_state <= SM2_WAIT;
