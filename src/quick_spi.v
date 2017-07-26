@@ -10,7 +10,6 @@ module quick_spi #
     parameter integer C_S_AXI_WUSER_WIDTH = 0,
     parameter integer C_S_AXI_RUSER_WIDTH = 0,
     parameter integer C_S_AXI_BUSER_WIDTH = 0,
-    
     parameter integer MEMORY_SIZE = 64,
     parameter integer NUMBER_OF_SLAVES = 2
 )
@@ -61,7 +60,6 @@ module quick_spi #
     output wire [C_S_AXI_RUSER_WIDTH-1:0] s_axi_ruser,
     output wire s_axi_rvalid,
     input wire s_axi_rready,
-
     output reg mosi,
     input wire miso,
     output reg sclk,
@@ -121,53 +119,6 @@ assign ar_wrap_size = (C_S_AXI_DATA_WIDTH/8 * (axi_arlen));
 assign aw_wrap_en = ((axi_awaddr & aw_wrap_size) == aw_wrap_size)? 1'b1: 1'b0;
 assign ar_wrap_en = ((axi_araddr & ar_wrap_size) == ar_wrap_size)? 1'b1: 1'b0;
 assign s_axi_buser = 0;
-
-reg[15:0] sclk_toggle_count;
-reg spi_clock_phase;
-
-localparam SM1_IDLE = 2'b00;
-localparam SM1_SELECT_SLAVE = 2'b01;
-localparam SM1_TRANSFER_DATA = 2'b10;
-reg[1:0] sm1_state;
-
-localparam SM2_WRITE = 2'b00;
-localparam SM2_READ = 2'b01;
-localparam SM2_WAIT = 2'b10;
-localparam SM2_END_DATA_TRANSFER = 2'b11;
-reg[1:0] sm2_state;
-
-reg wait_after_read;
-reg[15:0] num_toggles_to_wait;
-reg [7:0] memory [0:MEMORY_SIZE-1];
-
-wire CPOL = memory[0][0];
-wire CPHA = memory[0][1];
-wire start = memory[0][2];
-wire burst = memory[0][3];
-wire read = memory[0][4];
-
-wire[7:0] slave = memory[1];
-wire[7:0] clock_divider = memory[2];
-
-wire[15:0] outgoing_element_size = {memory[5], memory[4]};
-wire[15:0] num_outgoing_elements = {memory[7], memory[6]};
-wire[15:0] incoming_element_size = {memory[9], memory[8]};
-wire[15:0] num_write_extra_toggles = {memory[11], memory[10]};
-wire[15:0] num_read_extra_toggles = {memory[13], memory[12]};
-
-reg[15:0] num_bits_read;
-reg[15:0] num_bits_written;
-reg[15:0] num_elements_written;
-reg[3:0] incoming_byte_bit;
-reg[3:0] outgoing_byte_bit;
-reg[15:0] num_bytes_read;
-reg[15:0] num_bytes_written;
-
-localparam write_buffer_start = 14;
-localparam read_buffer_start = 39; /* (MEMORY_SIZE - write_buffer_start) / 2; */
-localparam num_initial_axi_transfer_bytes = read_buffer_start;
-
-reg[15:0] extra_toggle_count;
 
 always @(posedge s_axi_aclk) begin
     if (s_axi_aresetn == 1'b0) begin
@@ -379,39 +330,78 @@ assign memory_address =
 wire memory_write_enable = axi_wready && s_axi_wvalid;
 wire memory_read_enable = axi_arv_arr_flag; //& ~axi_rvalid
 
+reg[15:0] sclk_toggle_count;
+reg spi_clock_phase;
+
+localparam SM1_IDLE = 2'b00;
+localparam SM1_SELECT_SLAVE = 2'b01;
+localparam SM1_TRANSFER_DATA = 2'b10;
+reg[1:0] sm1_state;
+
+localparam SM2_WRITE = 2'b00;
+localparam SM2_READ = 2'b01;
+localparam SM2_WAIT = 2'b10;
+localparam SM2_END_DATA_TRANSFER = 2'b11;
+reg[1:0] sm2_state;
+
+reg wait_after_read;
+reg[15:0] num_toggles_to_wait;
+reg [7:0] memory [0:MEMORY_SIZE-1];
+
+wire CPOL = memory[0][0];
+wire CPHA = memory[0][1];
+wire start = memory[0][2];
+wire burst = memory[0][3];
+wire read = memory[0][4];
+
+wire[7:0] slave = memory[1];
+wire[7:0] clock_divider = memory[2];
+
+wire[15:0] outgoing_element_size = {memory[5], memory[4]};
+wire[15:0] num_outgoing_elements = {memory[7], memory[6]};
+wire[15:0] incoming_element_size = {memory[9], memory[8]};
+wire[15:0] num_write_extra_toggles = {memory[11], memory[10]};
+wire[15:0] num_read_extra_toggles = {memory[13], memory[12]};
+
+reg[15:0] num_bits_read;
+reg[15:0] num_bits_written;
+reg[15:0] num_elements_written;
+reg[3:0] incoming_byte_bit;
+reg[3:0] outgoing_byte_bit;
+reg[15:0] num_bytes_read;
+reg[15:0] num_bytes_written;
+
+localparam write_buffer_start = 14;
+localparam read_buffer_start = 39;
+localparam num_initial_axi_transfer_bytes = read_buffer_start;
+
+reg[15:0] extra_toggle_count;
 integer num_initial_axi_transfer_bytes_received;
 integer i;
 integer clock_count;
 
 always @(posedge s_axi_aclk) begin
     if (s_axi_aresetn == 1'b0) begin
-		clock_count <= 0;
-        num_initial_axi_transfer_bytes_received <= 0;
-        
-        for (i = 0; i < MEMORY_SIZE - 1; i = i + 1)
+		for (i = 0; i < MEMORY_SIZE - 1; i = i + 1)
             memory[i] <= 0;
-        
+	
+		clock_count <= 0;
+        num_initial_axi_transfer_bytes_received <= 0;        
         num_elements_written <= 0;
         num_bits_read <= 0;
         num_bits_written <= 0;
-        
         incoming_byte_bit <= 0;
         outgoing_byte_bit <= 0;
-        
         num_bytes_read <= 0;
         num_bytes_written <= 0;
-        
         extra_toggle_count <= 0;
         wait_after_read <= 1'b0;
-        
         mosi <= 1'bz;
         sclk <= 0;
         ss_n <= {NUMBER_OF_SLAVES{1'b1}};
         sclk_toggle_count <= 0;
         spi_clock_phase <= 0;
-        
         interrupt <= 1'b0;
-        
         sm1_state <= SM1_IDLE;
         sm2_state <= SM2_WRITE;
     end
@@ -419,14 +409,11 @@ always @(posedge s_axi_aclk) begin
     else begin
         if(memory_write_enable) begin
             if (s_axi_wstrb[0])
-                memory[(memory_address*4) + 0] <= s_axi_wdata[(0*8+7) -: 8];
-                
+                memory[(memory_address*4) + 0] <= s_axi_wdata[(0*8+7) -: 8]; 
             if (s_axi_wstrb[1])
                 memory[(memory_address*4) + 1] <= s_axi_wdata[(1*8+7) -: 8];
-                
             if (s_axi_wstrb[2])
                 memory[(memory_address*4) + 2] <= s_axi_wdata[(2*8+7) -: 8];
-                
             if (s_axi_wstrb[3])
                 memory[(memory_address*4) + 3] <= s_axi_wdata[(3*8+7) -: 8];
             
@@ -585,17 +572,13 @@ always @(posedge s_axi_aclk) begin
 									sclk_toggle_count <= 0;
 									ss_n[slave] <= 1'b1;
 									mosi <= 1'bz;
-									
 									num_bits_read <= 0;
 									num_bits_written <= 0;
 									
 									if(num_elements_written == num_outgoing_elements) begin
 										num_initial_axi_transfer_bytes_received <= 0;
-										
-										/* start */
 										memory[0][2] <= 1'b0;
 										interrupt <= 1'b1;
-									
 										num_elements_written <= 0;
 										num_bytes_written <= 0;
 										sm1_state <= SM1_IDLE;
