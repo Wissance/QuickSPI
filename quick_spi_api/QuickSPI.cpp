@@ -36,27 +36,6 @@ QuickSPI::~QuickSPI()
 	delete[] memory;
 }
 
-void QuickSPI::configureInterruptController()
-{
-	GICconfig = XScuGic_LookupConfig(INTERRUPT_CONTROLLER_DEVICE_ID);
-	XScuGic_CfgInitialize(&interruptController, GICconfig, GICconfig->CpuBaseAddress);
-    XScuGic_SetPriorityTriggerType(&interruptController, QUICK_SPI_INTERRUPT_ID, 0xA0, 0x3);
-    XScuGic_Connect(
-    		&interruptController,
-			QUICK_SPI_INTERRUPT_ID,
-			(Xil_InterruptHandler)QuickSPIInterruptHandler,
-			this);
-
-	/*XScuGic_SelfTest(&interruptController);*/
-    Xil_ExceptionRegisterHandler(
-    		XIL_EXCEPTION_ID_IRQ_INT,
-			(Xil_ExceptionHandler)XScuGic_InterruptHandler,
-			&interruptController);
-
-	Xil_ExceptionEnable();
-	XScuGic_Enable(&interruptController, QUICK_SPI_INTERRUPT_ID);
-}
-
 void QuickSPI::copyBits(
 		size_t numBits,
 		const void* source,
@@ -192,6 +171,27 @@ void QuickSPI::reverseBitOrder(
 		else
 			++currentDestinationBit;
 	}
+}
+
+void QuickSPI::configureInterruptController()
+{
+	GICconfig = XScuGic_LookupConfig(INTERRUPT_CONTROLLER_DEVICE_ID);
+	XScuGic_CfgInitialize(&interruptController, GICconfig, GICconfig->CpuBaseAddress);
+    XScuGic_SetPriorityTriggerType(&interruptController, QUICK_SPI_INTERRUPT_ID, 0xA0, 0x3);
+    XScuGic_Connect(
+    		&interruptController,
+			QUICK_SPI_INTERRUPT_ID,
+			(Xil_InterruptHandler)QuickSPIInterruptHandler,
+			this);
+
+	/*XScuGic_SelfTest(&interruptController);*/
+    Xil_ExceptionRegisterHandler(
+    		XIL_EXCEPTION_ID_IRQ_INT,
+			(Xil_ExceptionHandler)XScuGic_InterruptHandler,
+			&interruptController);
+
+	Xil_ExceptionEnable();
+	XScuGic_Enable(&interruptController, QUICK_SPI_INTERRUPT_ID);
 }
 
 void QuickSPI::updateControl()

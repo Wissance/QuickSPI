@@ -13,14 +13,12 @@ public:
 	QuickSPI();
 	~QuickSPI();
 
-	void configureInterruptController();
-
-	size_t getControlSize() const;
-	size_t getBufferSize() const;
-	size_t getWriteBufferStart() const;
-	size_t getWriteBufferEnd() const;
-	size_t getReadBufferStart() const;
-	size_t getReadBufferEnd() const;
+	static size_t getControlSize();
+	static size_t getBufferSize();
+	static size_t getWriteBufferStart();
+	static size_t getWriteBufferEnd();
+	static size_t getReadBufferStart();
+	static size_t getReadBufferEnd();
 
 	void* getMemory();
 	void* getWriteBuffer();
@@ -90,6 +88,7 @@ public:
 	void startTransaction();
 	void syncMemory();
 public:
+	void configureInterruptController();
 	void updateControl();
 
 	unsigned char CPOL;
@@ -111,32 +110,32 @@ public:
 	XScuGic interruptController;
 };
 
-inline size_t QuickSPI::getControlSize() const
+inline size_t QuickSPI::getControlSize()
 {
 	return CONTROL_SIZE;
 }
 
-inline size_t QuickSPI::getBufferSize() const
+inline size_t QuickSPI::getBufferSize()
 {
 	return (MEMORY_SIZE - getWriteBufferStart()) / 2;
 }
 
-inline size_t QuickSPI::getWriteBufferStart() const
+inline size_t QuickSPI::getWriteBufferStart()
 {
 	return getControlSize();
 }
 
-inline size_t QuickSPI::getWriteBufferEnd() const
+inline size_t QuickSPI::getWriteBufferEnd()
 {
 	return getWriteBufferStart() + (getBufferSize() - 1);
 }
 
-inline size_t QuickSPI::getReadBufferStart() const
+inline size_t QuickSPI::getReadBufferStart()
 {
 	return getWriteBufferStart() + getBufferSize();
 }
 
-inline size_t QuickSPI::getReadBufferEnd() const
+inline size_t QuickSPI::getReadBufferEnd()
 {
 	return getReadBufferStart() + (getBufferSize() - 1);
 }
