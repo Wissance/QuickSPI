@@ -4,9 +4,6 @@
 #include <cmath>
 #include "xscugic.h"
 
-const size_t MEMORY_SIZE = 64;
-const size_t CONTROL_SIZE = 14;
-
 class QuickSPI
 {
 public:
@@ -93,6 +90,9 @@ public:
 private:
 	void configureInterruptController();
 	void updateControl();
+
+	static const size_t MEMORY_SIZE = 64;
+	static const size_t CONTROL_SIZE = 14;
 
 	unsigned char CPOL;
 	unsigned char CPHA;
