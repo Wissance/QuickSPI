@@ -23,12 +23,13 @@ QuickSPI::QuickSPI():
 	numOutgoingElements(0),
 	numReadExtraToggles(0),
 	numWriteExtraToggles(0),
+	baseAddress(0),
 	numWrittenBits(0),
 	numReadBits(0)
-	{
-		memory = new unsigned char[MEMORY_SIZE]();
-		configureInterruptController();
-	}
+{
+	memory = new unsigned char[MEMORY_SIZE]();
+	configureInterruptController();
+}
 
 QuickSPI::~QuickSPI()
 {
@@ -221,16 +222,16 @@ void QuickSPI::startTransaction()
 	memset(&memory[getReadBufferStart()], 0, getBufferSize());
 	updateControl();
 
-	memcpy(QUICK_SPI_BASE_ADDRESS, memory, getBufferSize() + getControlSize());
+	memcpy(baseAddress, memory, getBufferSize() + getControlSize());
 
 	numWrittenBits = 0;
 	numReadBits = 0;
 
-	/* while(!(memory[0] & 0x4)) */
+	/* while(memory[0] & 0x4) */
 	asm("WFI");
 }
 
 void QuickSPI::syncMemory()
 {
-	memcpy(memory, QUICK_SPI_BASE_ADDRESS, MEMORY_SIZE);
+	memcpy(memory, baseAddress, MEMORY_SIZE);
 }

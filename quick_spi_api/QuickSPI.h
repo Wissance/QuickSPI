@@ -4,8 +4,6 @@
 #include <cmath>
 #include "xscugic.h"
 
-void* const QUICK_SPI_BASE_ADDRESS =
-		reinterpret_cast<void* const>(0x43C30000);
 const size_t MEMORY_SIZE = 64;
 const size_t CONTROL_SIZE = 14;
 
@@ -62,6 +60,9 @@ public:
 	unsigned short getNumWriteExtraToggles() const;
 	void setNumWriteExtraToggles(unsigned short pmNumWriteExtraToggles);
 
+	void* getBaseAddress() const;
+	void setBaseAddress(void* pmBaseAddress);
+
 	static size_t computeNumBytesIncludingBitRemainder(size_t numBits);
 	static size_t computeNumBytesExcludingBitRemainder(size_t numBits);
 	static size_t computeBitRemainder(size_t numBits);
@@ -89,7 +90,7 @@ public:
 
 	void startTransaction();
 	void syncMemory();
-public:
+private:
 	void configureInterruptController();
 	void updateControl();
 
@@ -106,6 +107,7 @@ public:
 	unsigned short numReadExtraToggles;
 	unsigned short numWriteExtraToggles;
 	unsigned char* memory;
+	void* baseAddress;
 	size_t numWrittenBits;
 	size_t numReadBits;
 	XScuGic_Config* GICconfig;
@@ -155,6 +157,16 @@ inline void* QuickSPI::getWriteBuffer()
 inline void* QuickSPI::getReadBuffer()
 {
 	return &memory[getReadBufferStart()];
+}
+
+inline void* QuickSPI::getBaseAddress() const
+{
+	return baseAddress;
+}
+
+inline void QuickSPI::setBaseAddress(void* pmBaseAddress)
+{
+	baseAddress = pmBaseAddress;
 }
 
 inline unsigned char QuickSPI::getCPOL() const
