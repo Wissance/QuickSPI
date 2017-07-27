@@ -465,7 +465,6 @@ always @(posedge s_axi_aclk) begin
 										else
 											sm2_state <= SM2_WRITE;
 									end
-
 								end
 								
 								else
