@@ -7,6 +7,7 @@
 
 void QuickSPIInterruptHandler(void* data)
 {
+	static_cast<QuickSPI*>(data)->setIRQReceived(true);
 	static_cast<QuickSPI*>(data)->syncMemory();
 }
 
@@ -23,11 +24,12 @@ QuickSPI::QuickSPI():
 	numOutgoingElements(0),
 	numReadExtraToggles(0),
 	numWriteExtraToggles(0),
+	IRQReceived(false),
+	memory(new unsigned char[MEMORY_SIZE]()),
 	baseAddress(0),
 	numWrittenBits(0),
 	numReadBits(0)
 {
-	memory = new unsigned char[MEMORY_SIZE]();
 	configureInterruptController();
 }
 
@@ -198,13 +200,17 @@ void QuickSPI::updateControl()
 {
 	unsigned char& firstByte = memory[0];
 
-	CPOL ? firstByte |= 0x1 : firstByte &= 0xfe;
-	CPHA ? firstByte |= 0x2 : firstByte &= 0xfd;
+	if(CPOL)
+		firstByte |= 0x1;
+	if(CPHA)
+		firstByte |= 0x2;
 
 	firstByte |= 0x4; /* start */
 
-	burst ? firstByte |= 0x8 : firstByte &= 0xf7;
-	read ? firstByte |= 0x10 : firstByte &= 0xef;
+	if(burst)
+		firstByte |= 0x8;
+	if(read)
+		firstByte |= 0x10;
 
 	memory[1] = slave;
 	memory[2] = numClocksToSkip;
@@ -219,16 +225,20 @@ void QuickSPI::updateControl()
 
 void QuickSPI::startTransaction()
 {
-	memset(&memory[getReadBufferStart()], 0, getBufferSize());
 	updateControl();
-
-	memcpy(baseAddress, memory, getBufferSize() + getControlSize());
+	/* Передаем контроль и буфер записи в железо. */
+	memcpy(baseAddress, memory, getControlSize() + getBufferSize());
 
 	numWrittenBits = 0;
 	numReadBits = 0;
 
-	/* while(memory[0] & 0x4) */
-	asm("WFI");
+	while(!IRQReceived)
+		asm("WFI");
+
+	IRQReceived = false;
+
+	/* По завершению процесса, зануляем контроль и буфер записи. */
+	memset(memory, 0, getControlSize() + getBufferSize());
 }
 
 void QuickSPI::syncMemory()

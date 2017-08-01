@@ -56,6 +56,7 @@ public:
 
 	unsigned short getNumWriteExtraToggles() const;
 	void setNumWriteExtraToggles(unsigned short pmNumWriteExtraToggles);
+	void setIRQReceived(bool pmIRQReceived);
 
 	void* getBaseAddress() const;
 	void setBaseAddress(void* pmBaseAddress);
@@ -106,6 +107,7 @@ private:
 	unsigned short numOutgoingElements;
 	unsigned short numReadExtraToggles;
 	unsigned short numWriteExtraToggles;
+	bool IRQReceived;
 	unsigned char* memory;
 	void* baseAddress;
 	size_t numWrittenBits;
@@ -306,6 +308,11 @@ inline unsigned short QuickSPI::getNumWriteExtraToggles() const
 inline void QuickSPI::setNumWriteExtraToggles(unsigned short pmNumWriteExtraToggles)
 {
 	numWriteExtraToggles = pmNumWriteExtraToggles;
+}
+
+inline void QuickSPI::setIRQReceived(bool pmIRQReceived)
+{
+	IRQReceived = pmIRQReceived;
 }
 
 inline size_t QuickSPI::computeNumBytesIncludingBitRemainder(size_t numBits)
