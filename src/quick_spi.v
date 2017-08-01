@@ -350,7 +350,6 @@ reg [7:0] memory [0:MEMORY_SIZE-1];
 
 wire CPOL = memory[0][0];
 wire CPHA = memory[0][1];
-wire start = memory[0][2];
 wire burst = memory[0][3];
 wire read = memory[0][4];
 
@@ -428,12 +427,10 @@ always @(posedge s_axi_aclk) begin
 				
 					case(sm1_state)
 						SM1_IDLE: begin
-							if(start) begin
-								sclk <= CPOL;
-								spi_clock_phase <= CPHA;
-								interrupt <= 1'b0;
-								sm1_state <= SM1_SELECT_SLAVE;
-							end
+							sclk <= CPOL;
+							spi_clock_phase <= CPHA;
+							interrupt <= 1'b0;
+							sm1_state <= SM1_SELECT_SLAVE;
 						end
 						
 						SM1_SELECT_SLAVE: begin
@@ -576,7 +573,6 @@ always @(posedge s_axi_aclk) begin
 									
 									if(num_elements_written == num_outgoing_elements) begin
 										num_initial_axi_transfer_bytes_received <= 0;
-										memory[0][2] <= 1'b0;
 										interrupt <= 1'b1;
 										num_elements_written <= 0;
 										num_bytes_written <= 0;
