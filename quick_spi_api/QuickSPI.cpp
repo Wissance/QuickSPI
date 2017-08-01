@@ -198,19 +198,16 @@ void QuickSPI::configureInterruptController()
 
 void QuickSPI::updateControl()
 {
-	unsigned char& firstByte = memory[0];
+	unsigned char* firstByte = &memory[0];
 
 	if(CPOL)
-		firstByte |= 0x1;
+		*firstByte |= 0x1;
 	if(CPHA)
-		firstByte |= 0x2;
-
-	firstByte |= 0x4; /* start */
-
+		*firstByte |= 0x2;
 	if(burst)
-		firstByte |= 0x8;
+		*firstByte |= 0x4;
 	if(read)
-		firstByte |= 0x10;
+		*firstByte |= 0x8;
 
 	memory[1] = slave;
 	memory[2] = numClocksToSkip;
