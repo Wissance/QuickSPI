@@ -1,6 +1,6 @@
 `timescale 1 ns / 1 ps
 
-module quick_spi #
+module quick_spi_soft #
 (
     parameter integer C_S_AXI_ID_WIDTH = 1,
     parameter integer C_S_AXI_DATA_WIDTH = 32,

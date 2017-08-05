@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module quick_spi_tb;
+module quick_spi_soft_testbench;
 reg clk;
 reg rst_n;
 wire end_of_transaction;
@@ -46,9 +46,9 @@ always @ (posedge clk) begin
     end
 end
 
-quick_spi spi(
-    .clk(clk),
-    .reset_n(rst_n),
+quick_spi_soft spi(
+    .s_axi_aclk(clk),
+    .s_axi_aresetn(rst_n),
     .mosi(mosi),
     .miso(miso),
     .sclk(sclk),

@@ -17,14 +17,14 @@
     <Option Name="CompiledLibDirRiviera" Val="$PCACHEDIR/compile_simlib/riviera"/>
     <Option Name="CompiledLibDirActivehdl" Val="$PCACHEDIR/compile_simlib/activehdl"/>
     <Option Name="BoardPart" Val=""/>
-    <Option Name="ActiveSimSet" Val="quick_spi_tests"/>
+    <Option Name="ActiveSimSet" Val="quick_spi_soft_tests"/>
     <Option Name="DefaultLib" Val="xil_defaultlib"/>
     <Option Name="EnableCoreContainer" Val="FALSE"/>
     <Option Name="CreateRefXciForCoreContainers" Val="FALSE"/>
     <Option Name="IPUserFilesDir" Val="$PPRDIR/QuickSPI.ip_user_files"/>
     <Option Name="IPStaticSourceDir" Val="$PPRDIR/QuickSPI.ip_user_files/ipstatic"/>
     <Option Name="EnableBDX" Val="FALSE"/>
-    <Option Name="WTXSimLaunchSim" Val="2"/>
+    <Option Name="WTXSimLaunchSim" Val="4"/>
     <Option Name="WTModelSimLaunchSim" Val="0"/>
     <Option Name="WTQuestaLaunchSim" Val="0"/>
     <Option Name="WTIesLaunchSim" Val="0"/>
@@ -42,7 +42,7 @@
   <FileSets Version="1" Minor="31">
     <FileSet Name="sources_1" Type="DesignSrcs" RelSrcDir="$PSRCDIR/sources_1">
       <Filter Type="Srcs"/>
-      <File Path="$PPRDIR/src/quick_spi.v">
+      <File Path="$PPRDIR/src/quick_spi_soft.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -51,7 +51,7 @@
       </File>
       <Config>
         <Option Name="DesignMode" Val="RTL"/>
-        <Option Name="TopModule" Val="quick_spi"/>
+        <Option Name="TopModule" Val="quick_spi_soft"/>
         <Option Name="TopAutoSet" Val="TRUE"/>
       </Config>
     </FileSet>
@@ -61,8 +61,8 @@
         <Option Name="ConstrsType" Val="XDC"/>
       </Config>
     </FileSet>
-    <FileSet Name="quick_spi_tests" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/quick_spi_tests">
-      <File Path="$PPRDIR/tests/quick_spi_tests/quick_spi_tb.v">
+    <FileSet Name="quick_spi_soft_tests" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/quick_spi_soft_tests">
+      <File Path="$PPRDIR/tests/quick_spi_soft_tests/quick_spi_soft_testbench.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -71,7 +71,7 @@
       </File>
       <Config>
         <Option Name="DesignMode" Val="RTL"/>
-        <Option Name="TopModule" Val="quick_spi_tb"/>
+        <Option Name="TopModule" Val="quick_spi_soft_testbench"/>
         <Option Name="TopLib" Val="xil_defaultlib"/>
         <Option Name="TopAutoSet" Val="TRUE"/>
         <Option Name="TransportPathDelay" Val="0"/>
