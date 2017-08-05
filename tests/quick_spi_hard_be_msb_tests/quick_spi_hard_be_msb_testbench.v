@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module quick_spi_be_lsb_testbench;
+module quick_spi_hard_be_msb_testbench;
 reg clk;
 reg rst_n;
 wire end_of_transaction;
@@ -67,10 +67,10 @@ begin
     end
 end
 
-quick_spi #
+quick_spi_hard #
 (
     .BYTES_ORDER(1), // big endian,
-    .BITS_ORDER(0)  // LSB First
+    .BITS_ORDER(1)   // MSB First
 )
 spi
 (

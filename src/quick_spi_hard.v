@@ -27,7 +27,7 @@
 
 `define MAX_DATA_WIDTH 64
 
-module quick_spi #
+module quick_spi_hard #
 (
     // slaves number
     parameter NUMBER_OF_SLAVES = 2,
